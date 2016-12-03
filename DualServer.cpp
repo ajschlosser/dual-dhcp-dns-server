@@ -7531,8 +7531,24 @@ data7 *findDHCPEntry(char *key)
 	myLower(key);
 	dhcpMap::iterator it = dhcpCache.find(key);
 
-	if (it != dhcpCache.end() && it->second)
+	if (it != dhcpCache.end() && it->second) {
+		for (dhcpMap::iterator it2 = dhcpCache.begin(); it2 != dhcpCache.end()) {
+			if (it2->second) {
+				if (!strcmp(it2->second->hostname, it->second->hostname)) {
+					if (!strcmp(it2->second->mapname, it->second->mapname)) {
+						++it2;
+					} else {
+						dhcpCache.erase(it2++);
+					}
+				} else {
+					++it2;
+				}
+			} else {
+				++it2;
+			}
+		}
 		return it->second;
+	}
 
 	return NULL;
 }
