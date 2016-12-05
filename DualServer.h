@@ -96,35 +96,35 @@ using namespace std;
 
 struct dnsHeader
 {
-	unsigned xid :16;	//query identification number
+	unsigned queryID :16;	//query identification number
 	/* byte boundry */
-	unsigned rd: 1;		//recursion desired
-	unsigned tc: 1;		//truncated message
-	unsigned aa: 1;		//authoritive answer
-	unsigned opcode: 4;	//option code
-	unsigned qr: 1;		//response flag
+	unsigned recursionDesired: 1;		//recursion desired
+	unsigned truncatedMessage: 1;		//truncated message
+	unsigned authoritativeAnswer: 1;		//authoritive answer
+	unsigned optionCode: 4;	//option code
+	unsigned responseFlag: 1;		//response flag
 	/* byte boundry */
-	unsigned rcode :4;	//response code
-	unsigned cd: 1;		//checking disabled by resolver
-	unsigned at: 1;		//authentic data from named
+	unsigned responseCode :4;	//response code
+	unsigned checkingDisabledByResolver: 1;		//checking disabled by resolver
+	unsigned authenticDataFromNamed: 1;		//authentic data from named
 	unsigned unused :1;	//unused
-	unsigned ra: 1;		//recursion available
+	unsigned recursionAvailable: 1;		//recursion available
 	/* byte boundry */
 	union
 	{
 		struct
 		{
-			unsigned qdcount :16;	//number of question entries
-			unsigned ancount :16;	//number of answer entries
-			unsigned nscount :16;	//number of authority entries
-			unsigned adcount :16;	//number of additional entries
+			unsigned questionsCount :16;	//number of question entries
+			unsigned answersCount :16;	//number of answer entries
+			unsigned authoritiesCount :16;	//number of authority entries
+			unsigned additionalsCount :16;	//number of additional entries
 		};
 		struct
 		{
-			unsigned zcount :16;	//number of zone entries
-			unsigned prcount :16;	//number of prerequisit entries
-			unsigned ucount :16;	//number of update entries
-			unsigned arcount :16;	//number of other entries
+			unsigned zonesCount :16;	//number of zone entries
+			unsigned prerequisitesCount :16;	//number of prerequisit entries
+			unsigned updatesCount :16;	//number of update entries
+			unsigned othersCount :16;	//number of other entries
 		};
 	};
 };
@@ -147,16 +147,16 @@ struct dnsHeader
 	// byte boundry 	// remaining bytes
 	union {
 		struct {
-			_Word qdcount;
-			_Word ancount;
-			_Word nscount;
-			_Word adcount;
+			_Word questionsCount;
+			_Word answersCount;
+			_Word authoritiesCount;
+			_Word additionalsCount;
 		};
 		struct {
-			_Word zcount;
-			_Word prcount;
-			_Word ucount;
-			_Word arcount;
+			_Word zonesCount;
+			_Word prerequisitesCount;
+			_Word updatesCount;
+			_Word othersCount;
 		};
 	};
 };

@@ -410,9 +410,9 @@ void WINAPI ServiceMain(DWORD /*argc*/, TCHAR* /*argv*/[])
 											logDNSMess(&dnsr, logBuff, 2);
 										}
 									}
- 									else if (dnsr.dnsp->header.rcode == RCODE_NOERROR)
+ 									else if (dnsr.dnsp->header.responseCode == RCODE_NOERROR)
  									{
-										dnsr.dnsp->header.rcode = RCODE_NAMEERROR;
+										dnsr.dnsp->header.responseCode = RCODE_NAMEERROR;
 
 										if (verbatim || config.dnsLogLevel >= 2)
 										{
@@ -424,9 +424,9 @@ void WINAPI ServiceMain(DWORD /*argc*/, TCHAR* /*argv*/[])
 								}
 								else if (!fdnmess(&dnsr))
 								{
-									if (!dnsr.dnsp->header.ancount && (dnsr.dnsp->header.rcode == RCODE_NOERROR || dnsr.dnsp->header.rcode == RCODE_NAMEERROR))
+									if (!dnsr.dnsp->header.ancount && (dnsr.dnsp->header.responseCode == RCODE_NOERROR || dnsr.dnsp->header.responseCode == RCODE_NAMEERROR))
 									{
-										dnsr.dnsp->header.rcode = RCODE_NAMEERROR;
+										dnsr.dnsp->header.responseCode = RCODE_NAMEERROR;
 
 										if (verbatim || config.dnsLogLevel >= 2)
 										{
@@ -942,9 +942,9 @@ void runProg()
 										logDNSMess(&dnsr, logBuff, 2);
 									}
 								}
-								else if (dnsr.dnsp->header.rcode == RCODE_NOERROR)
+								else if (dnsr.dnsp->header.responseCode == RCODE_NOERROR)
 								{
-									dnsr.dnsp->header.rcode = RCODE_NAMEERROR;
+									dnsr.dnsp->header.responseCode = RCODE_NAMEERROR;
 
 									if (verbatim || config.dnsLogLevel >= 2)
 									{
@@ -956,9 +956,9 @@ void runProg()
 							}
 							else if (!fdnmess(&dnsr))
 							{
-								if (!dnsr.dnsp->header.ancount && (dnsr.dnsp->header.rcode == RCODE_NOERROR || dnsr.dnsp->header.rcode == RCODE_NAMEERROR))
+								if (!dnsr.dnsp->header.ancount && (dnsr.dnsp->header.responseCode == RCODE_NOERROR || dnsr.dnsp->header.responseCode == RCODE_NAMEERROR))
 								{
-									dnsr.dnsp->header.rcode = RCODE_NAMEERROR;
+									dnsr.dnsp->header.responseCode = RCODE_NAMEERROR;
 
 									if (verbatim || config.dnsLogLevel >= 2)
 									{
@@ -1234,11 +1234,11 @@ _Byte pIP(void *raw, _DWord data)
 
 void addRREmpty(data5 *req)
 {
-	req->dnsp->header.ra = 0;
-	req->dnsp->header.at = 0;
-	req->dnsp->header.aa = 0;
-	req->dnsp->header.qr = 1;
-	req->dnsp->header.qdcount = 0;
+	req->dnsp->header.recursionAvailable = 0;
+	req->dnsp->header.authenticDataFromNamed = 0;
+	req->dnsp->header.authoritativeAnswer = 0;
+	req->dnsp->header.responseFlag = 1;
+	req->dnsp->header.questionsCount = 0;
 	req->dnsp->header.ancount = 0;
 	req->dnsp->header.nscount = 0;
 	req->dnsp->header.adcount = 0;
@@ -1247,22 +1247,22 @@ void addRREmpty(data5 *req)
 
 void addRRError(data5 *req, _Byte rcode)
 {
-	req->dnsp->header.qr = 1;
+	req->dnsp->header.responseFlag = 1;
 	req->dp = req->raw + req->bytes;
-	req->dnsp->header.rcode = rcode;
+	req->dnsp->header.responseCode = rcode;
 }
 
 void addRRNone(data5 *req)
 {
 	if (network.dns[0])
-		req->dnsp->header.ra = 1;
+		req->dnsp->header.recursionAvailable = 1;
 	else
-		req->dnsp->header.ra = 0;
+		req->dnsp->header.recursionAvailable = 0;
 
-	req->dnsp->header.at = 0;
-	req->dnsp->header.aa = 0;
+	req->dnsp->header.authenticDataFromNamed = 0;
+	req->dnsp->header.authoritativeAnswer = 0;
 
-	req->dnsp->header.qr = 1;
+	req->dnsp->header.responseFlag = 1;
 	req->dnsp->header.ancount = 0;
 	req->dnsp->header.nscount = 0;
 	req->dnsp->header.adcount = 0;
@@ -1282,9 +1282,9 @@ void addRRExt(data5 *req)
 		dnsPacket *input = (dnsPacket*)temp;
 		req->dnsp = (dnsPacket*)req->raw;
 
-		req->dnsp->header.aa = 0;
-		req->dnsp->header.at = 0;
-		req->dnsp->header.qdcount = htons(1);
+		req->dnsp->header.authoritativeAnswer = 0;
+		req->dnsp->header.authenticDataFromNamed = 0;
+		req->dnsp->header.questionsCount = htons(1);
 		req->dnsp->header.ancount = htons(1);
 
 		//manuplate the response
@@ -1301,7 +1301,7 @@ void addRRExt(data5 *req)
 
 		char *indp = &input->data;
 
-		for (int i = 1; i <= ntohs(input->header.qdcount); i++)
+		for (int i = 1; i <= ntohs(input->header.questionsCount); i++)
 		{
 			indp += fQu(tempbuff, input, indp);
 			indp += 4;
@@ -1359,10 +1359,10 @@ void addRRCache(data5 *req, CachedData *cache)
 		req->dnsp = (dnsPacket*)req->raw;
 		req->dp = &req->dnsp->data;
 
-		req->dnsp->header.aa = 0;
-		req->dnsp->header.at = 0;
+		req->dnsp->header.authoritativeAnswer = 0;
+		req->dnsp->header.authenticDataFromNamed = 0;
 		req->dnsp->header.ancount = 0;
-		req->dnsp->header.qdcount = htons(1);
+		req->dnsp->header.questionsCount = htons(1);
 
 		req->dp = &req->dnsp->data;
 		req->dp += pQu(req->dp, req->query);
@@ -1380,7 +1380,7 @@ void addRRCache(data5 *req, CachedData *cache)
 			req->dnsp->header.ancount = htons(1);
 		}
 
-		for (int i = 1; i <= ntohs(input->header.qdcount); i++)
+		for (int i = 1; i <= ntohs(input->header.questionsCount); i++)
 		{
 			indp += fQu(tempbuff, input, indp);
 			indp += 4;
@@ -1425,10 +1425,10 @@ void addRRCache(data5 *req, CachedData *cache)
 	else if (req->dnsType == DNS_TYPE_PTR || req->dnsType == DNS_TYPE_ANY || req->dnsType == DNS_TYPE_AAAA)
 	{
 		req->dnsp = (dnsPacket*)req->raw;
-		_Word xid = req->dnsp->header.xid;
+		_Word xid = req->dnsp->header.queryID;
 		memcpy(req->raw, cache->response, cache->bytes);
 		req->dp = req->raw + cache->bytes;
-		req->dnsp->header.xid = xid;
+		req->dnsp->header.queryID = xid;
 	}
 }
 
@@ -1715,8 +1715,8 @@ void addRRSOA(data5 *req)
 {
 	if (config.authorized && config.expireTime > t)
 	{
-		req->dnsp->header.at = 1;
-		req->dnsp->header.aa = 1;
+		req->dnsp->header.authenticDataFromNamed = 1;
+		req->dnsp->header.authoritativeAnswer = 1;
 
 		if (req->qType == QTYPE_A_BARE || req->qType == QTYPE_A_LOCAL || req->qType == QTYPE_A_ZONE)
 			req->dp += pQu(req->dp, config.zone);
@@ -1758,8 +1758,8 @@ void addRRNS(data5 *req)
 	//printf("%s=%u\n", config.ns, config.expireTime);
 	if (config.authorized && config.expireTime > t)
 	{
-		req->dnsp->header.at = 1;
-		req->dnsp->header.aa = 1;
+		req->dnsp->header.authenticDataFromNamed = 1;
+		req->dnsp->header.authoritativeAnswer = 1;
 
 		if (config.nsP[0] && (config.replication != 2 || config.dnsRepl > t))
 		{
@@ -2367,7 +2367,7 @@ void procTCP(data5 *req)
 	req->dp = req->raw + 2;
 	req->dnsp = (dnsPacket*)(req->dp);
 
-	if (req->dnsp->header.qr)
+	if (req->dnsp->header.responseFlag)
 		return;
 
 	req->dp = &req->dnsp->data;
@@ -2383,7 +2383,7 @@ void procTCP(data5 *req)
 		return;
 	}
 
-	if (ntohs(req->dnsp->header.qdcount) != 1 || ntohs(req->dnsp->header.ancount))
+	if (ntohs(req->dnsp->header.questionsCount) != 1 || ntohs(req->dnsp->header.ancount))
 	{
 		sprintf(logBuff, "DNS Query Format Error");
 		logTCPMess(req, logBuff, 1);
@@ -2393,9 +2393,9 @@ void procTCP(data5 *req)
 		return;
 	}
 
-	if (req->dnsp->header.opcode != OPCODE_STANDARD_QUERY)
+	if (req->dnsp->header.optionCode != OPCODE_STANDARD_QUERY)
 	{
-		switch (req->dnsp->header.opcode)
+		switch (req->dnsp->header.optionCode)
 		{
 			case OPCODE_INVERSE_QUERY:
 				sprintf(logBuff, "Inverse query not supported");
@@ -2414,7 +2414,7 @@ void procTCP(data5 *req)
 				break;
 
 			default:
-				sprintf(logBuff, "OpCode %u not supported", req->dnsp->header.opcode);
+				sprintf(logBuff, "OpCode %u not supported", req->dnsp->header.optionCode);
 		}
 
 		logTCPMess(req, logBuff, 1);
@@ -2424,7 +2424,7 @@ void procTCP(data5 *req)
 		return;
 	}
 
-	for (int i = 1; i <= ntohs(req->dnsp->header.qdcount); i++)
+	for (int i = 1; i <= ntohs(req->dnsp->header.questionsCount); i++)
 	{
 		req->dp += fQu(req->query, req->dnsp, req->dp);
 		req->dnsType = fUShort(req->dp);
@@ -2684,7 +2684,7 @@ void procTCP(data5 *req)
 				else
 				{
 					addRRNone(req);
-					req->dnsp->header.rcode = RCODE_NOTAUTH;
+					req->dnsp->header.responseCode = RCODE_NOTAUTH;
 					sendTCPmess(req);
 					sprintf(logBuff, "Server is not authority for zone %s", req->query);
 					logTCPMess(req, logBuff, 1);
@@ -2716,7 +2716,7 @@ _Word sendTCPmess(data5 *req)
 	if (select((req->sock + 1), NULL, &writefds, NULL, &tv1) > 0)
 	{
 		errno = 0;
-		req->dnsp->header.ra = 0;
+		req->dnsp->header.recursionAvailable = 0;
 		req->bytes = req->dp - req->raw;
 		pUShort(req->raw, req->bytes - 2);
 
@@ -2757,7 +2757,7 @@ _Word gdnmess(data5 *req, _Byte sockInd)
 	req->dnsp = (dnsPacket*)req->raw;
 
 /*
-	if (req->dnsp->header.qr && req->dnsp->header.opcode == OPCODE_DYNAMIC_UPDATE && config.replication == 1 && dhcpService && req->remote.sin_addr.s_addr == config.zoneServers[1])
+	if (req->dnsp->header.responseFlag && req->dnsp->header.optionCode == OPCODE_DYNAMIC_UPDATE && config.replication == 1 && dhcpService && req->remote.sin_addr.s_addr == config.zoneServers[1])
 	{
 		char localBuff[256];
 
@@ -2798,14 +2798,14 @@ _Word gdnmess(data5 *req, _Byte sockInd)
 	}
 */
 
-	if (req->dnsp->header.qr)
+	if (req->dnsp->header.responseFlag)
 		return 0;
 
-	if (req->dnsp->header.opcode != OPCODE_STANDARD_QUERY)
+	if (req->dnsp->header.optionCode != OPCODE_STANDARD_QUERY)
 	{
 		if (verbatim || config.dnsLogLevel >= 1)
 		{
-			switch (req->dnsp->header.opcode)
+			switch (req->dnsp->header.optionCode)
 			{
 				case OPCODE_INVERSE_QUERY:
 					sprintf(logBuff, "Inverse query not supported");
@@ -2824,7 +2824,7 @@ _Word gdnmess(data5 *req, _Byte sockInd)
 					break;
 
 				default:
-					sprintf(logBuff, "OpCode %d not supported", req->dnsp->header.opcode);
+					sprintf(logBuff, "OpCode %d not supported", req->dnsp->header.optionCode);
 			}
 
 			logDNSMess(req, logBuff, 1);
@@ -2834,7 +2834,7 @@ _Word gdnmess(data5 *req, _Byte sockInd)
 		return 0;
 	}
 
-	if (ntohs(req->dnsp->header.qdcount) != 1 || ntohs(req->dnsp->header.ancount))
+	if (ntohs(req->dnsp->header.questionsCount) != 1 || ntohs(req->dnsp->header.ancount))
 	{
 		if (verbatim || config.dnsLogLevel >= 1)
 		{
@@ -2848,7 +2848,7 @@ _Word gdnmess(data5 *req, _Byte sockInd)
 
 	req->dp = &req->dnsp->data;
 
-	for (int i = 1; i <= ntohs(req->dnsp->header.qdcount); i++)
+	for (int i = 1; i <= ntohs(req->dnsp->header.questionsCount); i++)
 	{
 		req->dp += fQu(req->query, req->dnsp, req->dp);
 		req->dnsType = fUShort(req->dp);
@@ -3023,7 +3023,7 @@ _Word scanloc(data5 *req)
 						addRRNone(req);
 						addRRNS(req);
 						addRRAd(req);
-						req->dnsp->header.rcode = RCODE_NOTIMPL;
+						req->dnsp->header.responseCode = RCODE_NOTIMPL;
 						return 1;
 					}
 					else
@@ -3177,7 +3177,7 @@ _Word fdnmess(data5 *req)
 	int nRet = -1;
 
 	char mapname[8];
-	sprintf(mapname, "%u", req->dnsp->header.xid);
+	sprintf(mapname, "%u", req->dnsp->header.queryID);
 	CachedData *queue = findQueue(mapname);
 
 	for (zoneDNS = 0; zoneDNS < MAX_COND_FORW && config.dnsRoutes[zoneDNS].zLen; zoneDNS++)
@@ -3220,7 +3220,7 @@ _Word fdnmess(data5 *req)
 						sprintf(logBuff, "Error Forwarding UDP DNS Message to Conditional Forwarder %s", IP2String(ipbuff, req->addr.sin_addr.s_addr));
 						logDNSMess(req, logBuff, 1);
 						addRRNone(req);
-						req->dnsp->header.rcode = RCODE_SERVERFAIL;
+						req->dnsp->header.responseCode = RCODE_SERVERFAIL;
 					}
 
 					if (config.dnsRoutes[zoneDNS].dns[1])
@@ -3271,7 +3271,7 @@ _Word fdnmess(data5 *req)
 			}
 		}
 
-		if (!req->dnsp->header.rd)
+		if (!req->dnsp->header.recursionDesired)
 		{
 			addRRNone(req);
 			if (verbatim || config.dnsLogLevel)
@@ -3285,7 +3285,7 @@ _Word fdnmess(data5 *req)
 		if (!network.dns[0])
 		{
 			addRRNone(req);
-			req->dnsp->header.ra = 0;
+			req->dnsp->header.recursionAvailable = 0;
 			if (verbatim || config.dnsLogLevel)
 			{
 				sprintf(logBuff, "%s not found (recursion not available)", strquery(req));
@@ -3325,7 +3325,7 @@ _Word fdnmess(data5 *req)
 					sprintf(logBuff, "Error forwarding UDP DNS Message to Forwarding Server %s", IP2String(ipbuff, network.dns[network.currentDNS]));
 					logDNSMess(req, logBuff, 1);
 					addRRNone(req);
-					req->dnsp->header.rcode = RCODE_SERVERFAIL;
+					req->dnsp->header.responseCode = RCODE_SERVERFAIL;
 				}
 
 				if (network.dns[1])
@@ -3410,7 +3410,7 @@ _Word frdnmess(data5 *req)
 	req->dnsp = (dnsPacket*)req->raw;
 	req->dp = &req->dnsp->data;
 
-	for (int i = 1; i <= ntohs(req->dnsp->header.qdcount); i++)
+	for (int i = 1; i <= ntohs(req->dnsp->header.questionsCount); i++)
 	{
 		req->dp += fQu(req->cname, req->dnsp, req->dp);
 		strcpy(req->mapname, req->cname);
@@ -3432,7 +3432,7 @@ _Word frdnmess(data5 *req)
 		}
 	}
 
-	if ((dnsType == DNS_TYPE_A || dnsType == DNS_TYPE_ANY || dnsType == DNS_TYPE_AAAA || dnsType == DNS_TYPE_PTR) && !req->dnsp->header.rcode && !req->dnsp->header.tc && req->dnsp->header.ancount)
+	if ((dnsType == DNS_TYPE_A || dnsType == DNS_TYPE_ANY || dnsType == DNS_TYPE_AAAA || dnsType == DNS_TYPE_PTR) && !req->dnsp->header.responseCode && !req->dnsp->header.truncatedMessage && req->dnsp->header.ancount)
 	{
 		time_t expiry = 0;
 		bool resultFound = false;
@@ -3487,7 +3487,7 @@ _Word frdnmess(data5 *req)
 	}
 
 	char mapname[8];
-	sprintf(mapname, "%u", req->dnsp->header.xid);
+	sprintf(mapname, "%u", req->dnsp->header.queryID);
 	CachedData *queue = findQueue(mapname);
 
 	if (queue && queue->expiry)
@@ -3772,7 +3772,7 @@ char* getResult(data5 *req)
 	char *raw = &req->dnsp->data;
 	_Word queueIndex;
 
-	for (int i = 1; i <= ntohs(req->dnsp->header.qdcount); i++)
+	for (int i = 1; i <= ntohs(req->dnsp->header.questionsCount); i++)
 	{
 		raw += fQu(buff, req->dnsp, raw);
 		raw += 4;
@@ -7593,9 +7593,9 @@ _DWord getSerial(char *zone)
 
 	req.sock = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
 	req.dnsp = (dnsPacket*)req.raw;
-	req.dnsp->header.qdcount = htons(1);
-	req.dnsp->header.rd = false;
-	req.dnsp->header.xid = (t % USHRT_MAX);
+	req.dnsp->header.questionsCount = htons(1);
+	req.dnsp->header.recursionDesired = false;
+	req.dnsp->header.queryID = (t % USHRT_MAX);
 	req.dp = &req.dnsp->data;
 	req.dp += pQu(req.dp, zone);
 	req.dp += pUShort(req.dp, DNS_TYPE_SOA);
@@ -7622,11 +7622,11 @@ _DWord getSerial(char *zone)
 		req.sockLen = sizeof(req.remote);
 		req.bytes = recvfrom(req.sock, req.raw, sizeof(req.raw), 0, (sockaddr*)&req.remote, &req.sockLen);
 
-		if (req.bytes > 0 && !req.dnsp->header.rcode && req.dnsp->header.qr && ntohs(req.dnsp->header.ancount))
+		if (req.bytes > 0 && !req.dnsp->header.responseCode && req.dnsp->header.responseFlag && ntohs(req.dnsp->header.ancount))
 		{
 			req.dp = &req.dnsp->data;
 
-			for (int j = 1; j <= ntohs(req.dnsp->header.qdcount); j++)
+			for (int j = 1; j <= ntohs(req.dnsp->header.questionsCount); j++)
 			{
 				req.dp += fQu(tempbuff, req.dnsp, req.dp);
 				req.dp += 4;
@@ -7682,11 +7682,11 @@ void sendServerName()
 
 	req.sock = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
 	req.dnsp = (dnsPacket*)req.raw;
-	req.dnsp->header.opcode = OPCODE_DYNAMIC_UPDATE;
-	req.dnsp->header.qr = true;
+	req.dnsp->header.optionCode = OPCODE_DYNAMIC_UPDATE;
+	req.dnsp->header.responseFlag = true;
 	req.dnsp->header.zcount = htons(1);
 	req.dnsp->header.prcount = htons(1);
-	req.dnsp->header.xid = (t % USHRT_MAX);
+	req.dnsp->header.queryID = (t % USHRT_MAX);
 	req.dp = &req.dnsp->data;
 	req.dp += pQu(req.dp, config.zone);
 	req.dp += pUShort(req.dp, DNS_TYPE_SOA);
@@ -8040,8 +8040,8 @@ _DWord getZone(_Byte ind, char *zone)
 		req.dp = req.raw;
 		req.dp += 2;
 		req.dnsp = (dnsPacket*)req.dp;
-		req.dnsp->header.qdcount = htons(1);
-		req.dnsp->header.xid = (t % USHRT_MAX);
+		req.dnsp->header.questionsCount = htons(1);
+		req.dnsp->header.queryID = (t % USHRT_MAX);
 		req.dp = &req.dnsp->data;
 		req.dp += pQu(req.dp, zone);
 		req.dp += pUShort(req.dp, DNS_TYPE_AXFR);
@@ -8083,7 +8083,7 @@ _DWord getZone(_Byte ind, char *zone)
 			req.dp = &req.dnsp->data;
 			char *dataend = req.raw + pktSize;
 
-			if (req.dnsp->header.rcode)
+			if (req.dnsp->header.responseCode)
 			{
 				sprintf(logBuff, "Primary Server %s, zone %s refused", IP2String(ipbuff, req.remote.sin_addr.s_addr), zone);
 				logDNSMess(logBuff, 1);
@@ -8091,13 +8091,13 @@ _DWord getZone(_Byte ind, char *zone)
 				return 0;
 			}
 
-			if (!req.dnsp->header.qr || !ntohs(req.dnsp->header.ancount))
+			if (!req.dnsp->header.responseFlag || !ntohs(req.dnsp->header.ancount))
 			{
 				fclose(f);
 				return 0;
 			}
 
-			for (int j = 1; j <= ntohs(req.dnsp->header.qdcount); j++)
+			for (int j = 1; j <= ntohs(req.dnsp->header.questionsCount); j++)
 			{
 				req.dp += fQu(req.query, req.dnsp, req.dp);
 				req.dp += 4;
@@ -8343,8 +8343,8 @@ bool getSecondary()
 		req.dp = req.raw;
 		req.dp += 2;
 		req.dnsp = (dnsPacket*)req.dp;
-		req.dnsp->header.qdcount = htons(1);
-		req.dnsp->header.xid = (t % USHRT_MAX);
+		req.dnsp->header.questionsCount = htons(1);
+		req.dnsp->header.queryID = (t % USHRT_MAX);
 		req.dp = &req.dnsp->data;
 		req.dp += pQu(req.dp, config.authority);
 		req.dp += pUShort(req.dp, DNS_TYPE_AXFR);
@@ -8383,19 +8383,19 @@ bool getSecondary()
 			req.dp = &req.dnsp->data;
 			char *dataend = req.raw + pktSize;
 
-			if (req.dnsp->header.rcode)
+			if (req.dnsp->header.responseCode)
 			{
 				fclose(f);
 				return false;
 			}
 
-			if (!req.dnsp->header.qr || !ntohs(req.dnsp->header.ancount))
+			if (!req.dnsp->header.responseFlag || !ntohs(req.dnsp->header.ancount))
 			{
 				fclose(f);
 				return false;
 			}
 
-			for (int j = 1; j <= ntohs(req.dnsp->header.qdcount); j++)
+			for (int j = 1; j <= ntohs(req.dnsp->header.questionsCount); j++)
 			{
 				req.dp += fQu(req.query, req.dnsp, req.dp);
 				req.dp += 4;
