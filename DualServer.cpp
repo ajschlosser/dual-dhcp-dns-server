@@ -3126,16 +3126,16 @@ _Word scanloc(data5 *req)
 	//sprintf(logBuff, "cType=%u,dnsType=%u,query=%s,cname=%s", req->cType, req->dnsType, req->query, req->cname);
 	//logMess(logBuff, 2);
 
-	if (req->dnsType == DNS_TYPE_A && config.wildHosts[0].wildcard[0])
+	if (req->dnsType == DNS_TYPE_A && config.wildcardHosts[0].wildcard[0])
 	{
-		for (_Byte i = 0; i < MAX_WILDCARD_HOSTS && config.wildHosts[i].wildcard[0]; i++)
+		for (_Byte i = 0; i < MAX_WILDCARD_HOSTS && config.wildcardHosts[i].wildcard[0]; i++)
 		{
-			if (wildcmp(req->mapname, config.wildHosts[i].wildcard))
+			if (wildcmp(req->mapname, config.wildcardHosts[i].wildcard))
 			{
 				addRRNone(req);
 
-				if (config.wildHosts[i].ip)
-					addRRWildA(req, config.wildHosts[i].ip);
+				if (config.wildcardHosts[i].ip)
+					addRRWildA(req, config.wildcardHosts[i].ip);
 
 				return 1;
 			}
@@ -9313,9 +9313,9 @@ void __cdecl init(void *lpParam)
 						if (chkQu(name) && (isIP(value) || !strcasecmp(value, "0.0.0.0")))
 						{
 							_DWord ip = inet_addr(value);
-							strcpy(config.wildHosts[i].wildcard, name);
-							myLower(config.wildHosts[i].wildcard);
-							config.wildHosts[i].ip = ip;
+							strcpy(config.wildcardHosts[i].wildcard, name);
+							myLower(config.wildcardHosts[i].wildcard);
+							config.wildcardHosts[i].ip = ip;
 							i++;
 						}
 						else
