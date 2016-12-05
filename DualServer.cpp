@@ -35,9 +35,9 @@ bool verbatim = false;
 SERVICE_STATUS serviceStatus;
 SERVICE_STATUS_HANDLE serviceStatusHandle = 0;
 HANDLE stopServiceEvent = 0;
-//data1 network;
-data1 network;
-data2 config;
+//Network network;
+Network network;
+Config config;
 data9 token;
 data9 dhcpr;
 data5 dnsr;
@@ -85,10 +85,10 @@ const char send200[] = "HTTP/1.1 200 OK\r\nDate: %s\r\nLast-Modified: %s\r\nCont
 const char send403[] = "HTTP/1.1 403 Forbidden\r\n\r\n<h1>403 Forbidden</h1>";
 const char send404[] = "HTTP/1.1 404 Not Found\r\n\r\n<h1>404 Not Found</h1>";
 const char td200[] = "<td>%s</td>";
-const char sVersion[] = "Dual DHCP DNS Server Version 7.29 Windows Build 7035";
+const char sVersion[] = "Dual DHCP DNS Server (2016) Version 0.0.1 Windows Alpha Build";
 const char htmlStart[] = "<html>\n<head>\n<title>%s</title><meta http-equiv=\"refresh\" content=\"60\">\n<meta http-equiv=\"cache-control\" content=\"no-cache\">\n</head>\n";
 //const char bodyStart[] = "<body bgcolor=\"#cccccc\"><table width=\"800\"><tr><td align=\"center\"><font size=\"5\"><b>%s</b></font></b></b></td></tr><tr><td align=\"right\"><a target=\"_new\" href=\"http://dhcp-dns-server.sourceforge.net/\">http://dhcp-dns-server.sourceforge.net/</b></b></td></tr></table>";
-const char bodyStart[] = "<body bgcolor=\"#cccccc\"><table width=640><tr><td align=\"center\"><font size=\"5\"><b>%s</b></font></td></tr><tr><td align=\"right\"><a target=\"_new\" href=\"http://dhcp-dns-server.sourceforge.net\">http://dhcp-dns-server.sourceforge.net</td></tr></table>";
+const char bodyStart[] = "<body bgcolor=\"#cccccc\"><table width=640><tr><td align=\"center\"><font size=\"5\"><b>%s</b></font></td></tr><tr><td align=\"right\"><a target=\"_new\" href=\"http://dhcp-dns-server.sourceforge.net\">https://github.com/ajschlosser/Dual-DHCP-DNS-Server</td></tr></table>";
 //const char bodyStart[] = "<body bgcolor=\"#cccccc\"><table width=640><tr><td align=\"center\"><font size=\"5\"><b>%s</b></font></td></tr><tr><td align=\"center\"><font size=\"5\">%s</font></td></tr></table>";
 const data4 opData[] =
     {
@@ -2002,7 +2002,7 @@ void procHTTP(data19 *req)
 		//printf("%s\n", buffer);
 	}
 
-	if (config.httpClients[0] && !findServer(config.httpClients, 8, req->remote.sin_addr.s_addr))
+	if (config.HTTPClients[0] && !findServer(config.HTTPClients, 8, req->remote.sin_addr.s_addr))
 	{
 		if (verbatim || config.dhcpLogLevel >= 2)
 		{
@@ -5166,7 +5166,7 @@ int getIndex(char rangeInd, _DWord ip)
 	return -1;
 }
 
-void loadOptions(FILE *f, const char *sectionName, data20 *optionData)
+void loadOptions(FILE *f, const char *sectionName, OptionData *optionData)
 {
 	optionData->ip = 0;
 	optionData->mask = 0;
@@ -6026,7 +6026,7 @@ void loadDHCP()
 
 	if (f = openSection(GLOBALOPTIONS, 1))
 	{
-		data20 optionData;
+		OptionData optionData;
 		loadOptions(f, GLOBALOPTIONS, &optionData);
 		config.options = (_Byte*)calloc(1, optionData.optionSize);
 		memcpy(config.options, optionData.options, optionData.optionSize);
@@ -6041,7 +6041,7 @@ void loadDHCP()
 		if (f = openSection(RANGESET, i))
 		{
 			_Byte m = config.rangeCount;
-			data20 optionData;
+			OptionData optionData;
 			optionData.rangeSetInd = i - 1;
 			loadOptions(f, RANGESET, &optionData);
 			_Byte *options = NULL;
@@ -6123,7 +6123,7 @@ void loadDHCP()
 
 			_Byte hexValue[UCHAR_MAX];
 			_Byte hexValueSize = sizeof(hexValue);
-			data20 optionData;
+			OptionData optionData;
 
 			if (strlen(sectionName) <= 48 && !getHexValue(hexValue, sectionName, &hexValueSize))
 			{
@@ -9706,6 +9706,8 @@ void __cdecl init(void *lpParam)
 
 			network.HTTPConnection.port = 6789;
 			network.HTTPConnection.server = inet_addr("127.0.0.1");
+			network.APIConnection.port = 1234;
+			network.API.Connection.server = inet_addr("127.0.0.1");
 
 			if (f = openSection("HTTP_INTERFACE", 1))
 			{
@@ -9751,7 +9753,7 @@ void __cdecl init(void *lpParam)
 					else if (!strcasecmp(name, "HTTPClient"))
 					{
 						if (isIP(value))
-							addServer(config.httpClients, 8, inet_addr(value));
+							addServer(config.HTTPClients, 8, inet_addr(value));
 						else
 						{
 							sprintf(logBuff, "Warning: Section [HTTP_INTERFACE], invalid client IP %s, ignored", raw);
@@ -9817,6 +9819,37 @@ void __cdecl init(void *lpParam)
 
 						if (network.HTTPConnection.sock > network.maxFD)
 							network.maxFD = network.HTTPConnection.sock;
+					}
+				}
+			}
+			network.APIConnection.sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+			if (network.APIConnection.sock == INVALID_SOCKET)
+			{
+				printf("Ya dunn goodfed\n\n");
+			}
+			else
+			{
+				network.APIConnection.addr.sin_family = AF_INET;
+				network.APIConnection.addr.sin_addr.s_addr = network.APIConnection.server;
+				network.APIConnection.addr.sin_port = htons(network.APIConnection.port);
+				int nRet = bind(network.APIConnection.sock, (sockaddr*)&network.APIConnection.addr, sizeof(struct sockaddr_in));
+				if (nRet == SOCKET_ERROR) {
+					printf("Uh oh\n\n");
+				}
+				else
+				{
+					nRet = listen(network.APIConnection.sock, SOMAXCONN);
+					if (nRet == SOCKET_ERROR)
+					{
+						printf("Dang.\n\n");
+					}
+					else
+					{
+						network.APIConnection.loaded = true;
+						network.APIConnection.ready = true;
+
+						if (network.APIConnection.sock > network.maxFD)
+							network.maxFD = network.APIConnection.sock;
 					}
 				}
 			}
@@ -10057,12 +10090,12 @@ bool detectChange()
 	return true;
 }
 
-void getInterfaces(data1 *network)
+void getInterfaces(Network *network)
 {
 	char logBuff[512];
 	char ipbuff[32];
 
-	memset(network, 0, sizeof(data1));
+	memset(network, 0, sizeof(Network));
 
 	SOCKET sd = WSASocket(PF_INET, SOCK_DGRAM, 0, 0, 0, 0);
 

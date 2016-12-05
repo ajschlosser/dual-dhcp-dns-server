@@ -649,7 +649,7 @@ struct data19
 	char *dp;
 };
 
-struct data20
+struct OptionData
 {
 	_Byte options[sizeof(dhcp_packet)];
 	_Word optionSize;
@@ -742,13 +742,14 @@ struct data8 //client
 	char hostname[64];
 };
 
-struct data1
+struct Netowrk
 {
 	DhcpConnType dhcpConn[MAX_SERVERS];
 	ConnType DNS_UDPConnections[MAX_SERVERS];
 	ConnType forwConn;
 	ConnType DNS_TCPConnections[MAX_SERVERS];
 	ConnType HTTPConnection;
+   ConnType APIConnection;
 	_DWord allServers[MAX_SERVERS];
 	_DWord listenServers[MAX_SERVERS];
 	_DWord listenMasks[MAX_SERVERS];
@@ -762,7 +763,7 @@ struct data1
 	bool bindfailed;
 };
 
-struct data2
+struct Config
 {
 	WSADATA wsaData;
 	char zone[256];
@@ -791,7 +792,7 @@ struct data2
 	_Word maxCache;
 	_DWord dhcpSize;
 	time_t expireTime;
-	_DWord httpClients[8];
+	_DWord HTTPClients[8];
 	_DWord specifiedServers[MAX_SERVERS];
 	_DWord specifiedDnsServers[MAX_SERVERS];
 	_DWord zoneServers[MAX_TCP_CLIENTS];
@@ -937,13 +938,13 @@ void debug(int i);
 void delDnsEntry(CachedData* cache);
 void emptyCache(_Byte ind);
 void expireEntry(_DWord ip);
-void getInterfaces(data1 *network);
+void getInterfaces(Network *network);
 void holdIP(_DWord ip);
 void installService();
 void listCache();
 void listDhcpCache();
 void loadDHCP();
-void loadOptions(FILE *f, const char *sectionName, data20 *optionData);
+void loadOptions(FILE *f, const char *sectionName, OptionData *optionData);
 void lockIP(_DWord ip);
 void lockOptions(FILE *f);
 void logDHCPMess(char *logBuff, _Byte logLevel);
