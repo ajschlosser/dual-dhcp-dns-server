@@ -797,7 +797,7 @@ int main(int argc, TCHAR* argv[])
 void runProg()
 {
 	//printf("%i\n",t);
-	//printf("%i\n",sizeof(data7));
+	//printf("%i\n",sizeof(CachedData));
 	//printf("%d\n",dnsCache[currentInd].max_size());
 
 	char logBuff[512];
@@ -1346,7 +1346,7 @@ void addRRExt(data5 *req)
 	}
 }
 
-void addRRCache(data5 *req, data7 *cache)
+void addRRCache(data5 *req, CachedData *cache)
 {
 	char tempbuff[512];
 
@@ -1450,7 +1450,7 @@ void addRRA(data5 *req)
 
 	for (; req->iterBegin != dnsCache[currentInd].end(); req->iterBegin++)
 	{
-		data7 *cache = req->iterBegin->second;
+		CachedData *cache = req->iterBegin->second;
 
 		if (strcasecmp(cache->name, req->mapname))
 			break;
@@ -1473,7 +1473,7 @@ void addRRPtr(data5 *req)
 {
 	for (; req->iterBegin != dnsCache[currentInd].end(); req->iterBegin++)
 	{
-		if (data7 *cache = req->iterBegin->second)
+		if (CachedData *cache = req->iterBegin->second)
 		{
 			if (strcasecmp(cache->name, req->mapname))
 				break;
@@ -1518,7 +1518,7 @@ void addRRServerA(data5 *req)
 
 	for (;it != dnsCache[currentInd].end(); it++)
 	{
-		if (data7 *cache = it->second)
+		if (CachedData *cache = it->second)
 		{
 			if (strcasecmp(cache->name, req->mapname))
 				break;
@@ -1538,7 +1538,7 @@ void addRRServerA(data5 *req)
 
 	for (;req->iterBegin != dnsCache[currentInd].end(); req->iterBegin++)
 	{
-		if (data7 *cache = req->iterBegin->second)
+		if (CachedData *cache = req->iterBegin->second)
 		{
 			if (strcasecmp(cache->name, req->mapname))
 				break;
@@ -1571,7 +1571,7 @@ void addRRAny(data5 *req)
 
 	for (; req->iterBegin != dnsCache[currentInd].end(); req->iterBegin++)
 	{
-		if (data7 *cache = req->iterBegin->second)
+		if (CachedData *cache = req->iterBegin->second)
 		{
 			if (strcasecmp(cache->name, req->mapname))
 				break;
@@ -1665,7 +1665,7 @@ void addRRWildA(data5 *req, MYDWORD ip)
 	//req->bytes = req->dp - req->raw;
 }
 
-void addRRLocalhostA(data5 *req, data7 *cache)
+void addRRLocalhostA(data5 *req, CachedData *cache)
 {
 	if (strcasecmp(req->query, req->mapname))
 	{
@@ -1688,7 +1688,7 @@ void addRRLocalhostA(data5 *req, data7 *cache)
 	//req->bytes = req->dp - req->raw;
 }
 
-void addRRLocalhostPtr(data5 *req, data7 *cache)
+void addRRLocalhostPtr(data5 *req, CachedData *cache)
 {
 	req->dnsp->header.ancount = htons(htons(req->dnsp->header.ancount) + 1);
 	req->dp += pQu(req->dp, req->query);
@@ -1843,7 +1843,7 @@ void addRRAd(data5 *req)
 
 void addRRAOne(data5 *req)
 {
-	if (data7 *cache = req->iterBegin->second)
+	if (CachedData *cache = req->iterBegin->second)
 	{
 		req->dnsp->header.ancount = htons(htons(req->dnsp->header.ancount) + 1);
 
@@ -1866,7 +1866,7 @@ void addRRAOne(data5 *req)
 
 void addRRPtrOne(data5 *req)
 {
-	if (data7 *cache = req->iterBegin->second)
+	if (CachedData *cache = req->iterBegin->second)
 	{
 		req->dnsp->header.ancount = htons(htons(req->dnsp->header.ancount) + 1);
 		sprintf(req->cname, "%s%s", cache->name, arpa);
@@ -1891,7 +1891,7 @@ void addRRPtrOne(data5 *req)
 
 void addRRSTAOne(data5 *req)
 {
-	if (data7 *cache = req->iterBegin->second)
+	if (CachedData *cache = req->iterBegin->second)
 	{
 		req->dnsp->header.ancount = htons(htons(req->dnsp->header.ancount) + 1);
 
@@ -1914,7 +1914,7 @@ void addRRSTAOne(data5 *req)
 
 void addRRCNOne(data5 *req)
 {
-	if (data7 *cache = req->iterBegin->second)
+	if (CachedData *cache = req->iterBegin->second)
 	{
 		req->dnsp->header.ancount = htons(htons(req->dnsp->header.ancount) + 1);
 
@@ -2063,8 +2063,8 @@ void sendStatus(data19 *req)
 
 	dhcpMap::iterator p;
 	MYDWORD iip = 0;
-	data7 *dhcpEntry = NULL;
-	//data7 *cache = NULL;
+	CachedData *dhcpEntry = NULL;
+	//CachedData *cache = NULL;
 	//printf("%d=%d\n", dhcpCache.size(), cfig.dhcpSize);
 	req->memSize = 2048 + (135 * dhcpCache.size()) + (cfig.dhcpSize * 26);
 	req->dp = (char*)calloc(1, req->memSize);
@@ -3041,7 +3041,7 @@ MYWORD scanloc(data5 *req)
 		if (req->iterBegin == dnsCache[currentInd].end())
 			break;
 
-		data7 *cache = req->iterBegin->second;
+		CachedData *cache = req->iterBegin->second;
 
 		if (cache->expiry < t && cache->cType != CTYPE_CACHED)
 			break;
@@ -3178,7 +3178,7 @@ MYWORD fdnmess(data5 *req)
 
 	char mapname[8];
 	sprintf(mapname, "%u", req->dnsp->header.xid);
-	data7 *queue = findQueue(mapname);
+	CachedData *queue = findQueue(mapname);
 
 	for (zoneDNS = 0; zoneDNS < MAX_COND_FORW && cfig.dnsRoutes[zoneDNS].zLen; zoneDNS++)
 	{
@@ -3476,7 +3476,7 @@ MYWORD frdnmess(data5 *req)
 			lump.mapname = req->mapname;
 			lump.bytes = req->bytes;
 			lump.response = (MYBYTE*)req->dnsp;
-			data7* cache = createCache(&lump);
+			CachedData* cache = createCache(&lump);
 
 			if (cache)
 			{
@@ -3488,7 +3488,7 @@ MYWORD frdnmess(data5 *req)
 
 	char mapname[8];
 	sprintf(mapname, "%u", req->dnsp->header.xid);
-	data7 *queue = findQueue(mapname);
+	CachedData *queue = findQueue(mapname);
 
 	if (queue && queue->expiry)
 	{
@@ -3564,7 +3564,7 @@ void add2Cache(char *hostname, MYDWORD ip, time_t expiry, MYBYTE aType, MYBYTE p
 	if (!hostname || !ip)
 		return;
 
-	data7 *cache = NULL;
+	CachedData *cache = NULL;
 	hostMap::iterator p;
 
 	if (pType)
@@ -3593,7 +3593,7 @@ void add2Cache(char *hostname, MYDWORD ip, time_t expiry, MYBYTE aType, MYBYTE p
 			lump.hostname = hostname;
 			cache = createCache(&lump);
 /*
-			cache = (data7*)calloc(1, sizeof(data7));
+			cache = (CachedData*)calloc(1, sizeof(CachedData));
 
 			if (cache)
 			{
@@ -3663,7 +3663,7 @@ void add2Cache(char *hostname, MYDWORD ip, time_t expiry, MYBYTE aType, MYBYTE p
 			lump.mapname = hostname;
 			cache = createCache(&lump);
 /*
-			cache = (data7*)calloc(1, sizeof(data7));
+			cache = (CachedData*)calloc(1, sizeof(CachedData));
 
 			if (cache)
 			{
@@ -3710,14 +3710,14 @@ void expireEntry(MYDWORD ip)
 		return;
 
 	IP2String(ipbuff, htonl(ip));
-	data7 *cache = findEntry(ipbuff, DNS_TYPE_PTR, CTYPE_LOCAL_PTR_AUTH);
+	CachedData *cache = findEntry(ipbuff, DNS_TYPE_PTR, CTYPE_LOCAL_PTR_AUTH);
 
 	if (!cache)
 		cache = findEntry(ipbuff, DNS_TYPE_PTR, CTYPE_LOCAL_PTR_NAUTH);
 
 	if (cache && cache->hostname[0] && cache->expiry < INT_MAX)
 	{
-		data7 *cache1 = findEntry(cache->hostname, DNS_TYPE_A, CTYPE_LOCAL_A);
+		CachedData *cache1 = findEntry(cache->hostname, DNS_TYPE_A, CTYPE_LOCAL_A);
 
 		if (cache1 && cache1->ip == ip && cache1->expiry < INT_MAX)
 		{
@@ -3733,9 +3733,9 @@ void addHostNotFound(char *hostname)
 	lump.cType = CTYPE_STATIC_A_NAUTH;
 	lump.dnsType = DNS_TYPE_A;
 	lump.mapname = hostname;
-	data7 *cache = createCache(&lump);
+	CachedData *cache = createCache(&lump);
 /*
-	data7 *cache = (data7*)calloc(1, sizeof(data7));
+	CachedData *cache = (CachedData*)calloc(1, sizeof(CachedData));
 
 	if (cache)
 	{
@@ -3980,7 +3980,7 @@ MYDWORD resad(data9 *req)
 
 		for (; it != dnsCache[currentInd].end(); it++)
 		{
-			data7 *cache = it->second;
+			CachedData *cache = it->second;
 
 			//printf("%u\n", cache->mapname);
 
@@ -4145,7 +4145,7 @@ MYDWORD resad(data9 *req)
 				return 0;
 
 /*
-			req->dhcpEntry = (data7*)calloc(1, sizeof(data7));
+			req->dhcpEntry = (CachedData*)calloc(1, sizeof(CachedData));
 
 			if (!req->dhcpEntry)
 			{
@@ -4730,7 +4730,7 @@ void updateDNS(data9 *req)
 	}
 }
 
-void setTempLease(data7 *dhcpEntry)
+void setTempLease(CachedData *dhcpEntry)
 {
 	if (dhcpEntry && dhcpEntry->ip)
 	{
@@ -4750,7 +4750,7 @@ void setTempLease(data7 *dhcpEntry)
 	}
 }
 
-void setLeaseExpiry(data7 *dhcpEntry, MYDWORD lease)
+void setLeaseExpiry(CachedData *dhcpEntry, MYDWORD lease)
 {
 	//printf("%d=%d\n", t, lease);
 	if (dhcpEntry && dhcpEntry->ip)
@@ -4772,7 +4772,7 @@ void setLeaseExpiry(data7 *dhcpEntry, MYDWORD lease)
 	}
 }
 
-void setLeaseExpiry(data7 *dhcpEntry)
+void setLeaseExpiry(CachedData *dhcpEntry)
 {
 	if (dhcpEntry && dhcpEntry->ip)
 	{
@@ -4948,7 +4948,7 @@ MYDWORD sendRepl(data9 *req)
 }
 
 /*
-MYDWORD sendRepl(data7 *dhcpEntry)
+MYDWORD sendRepl(CachedData *dhcpEntry)
 {
 	data9 req;
 	memset(&req, 0, sizeof(data9));
@@ -5074,7 +5074,7 @@ void recvRepl(data9 *req)
 		if (req->dhcpEntry)
 			dhcpCache[req->dhcpEntry->mapname] = req->dhcpEntry;
 /*
-		req->dhcpEntry = (data7*)calloc(1, sizeof(data7));
+		req->dhcpEntry = (CachedData*)calloc(1, sizeof(CachedData));
 
 		if (!req->dhcpEntry)
 		{
@@ -5857,7 +5857,7 @@ void addDHCPRange(char *dp)
 				range->rangeStart = rs;
 				range->rangeEnd = re;
 				range->expiry = (time_t*)calloc((re - rs + 1), sizeof(time_t));
-				range->dhcpEntry = (data7**)calloc((re - rs + 1), sizeof(data7*));
+				range->dhcpEntry = (CachedData**)calloc((re - rs + 1), sizeof(CachedData*));
 
 				if (!range->expiry || !range->dhcpEntry)
 				{
@@ -6019,7 +6019,7 @@ void loadDHCP()
 {
 	char ipbuff[32];
 	char logBuff[512];
-	data7 *dhcpEntry = NULL;
+	CachedData *dhcpEntry = NULL;
 	char mapname[64];
 	FILE *f = NULL;
 	FILE *ff = NULL;
@@ -6158,7 +6158,7 @@ void loadDHCP()
 							if (!dhcpEntry)
 								return;
 /*
-							dhcpEntry = (data7*)calloc(1, sizeof(data7));
+							dhcpEntry = (CachedData*)calloc(1, sizeof(CachedData));
 
 							if (!dhcpEntry)
 							{
@@ -6257,7 +6257,7 @@ void loadDHCP()
 					lump.mapname = mapname;
 					dhcpEntry = createCache(&lump);
 /*
-					dhcpEntry = (data7*)calloc(1, sizeof(data7));
+					dhcpEntry = (CachedData*)calloc(1, sizeof(CachedData));
 
 					if (!dhcpEntry)
 					{
@@ -7250,7 +7250,7 @@ void listCache()
 	char ipbuff[32];
 	char logBuff[512];
 	hostMap::iterator p = dnsCache[currentInd].begin();
-	data7 *cache = NULL;
+	CachedData *cache = NULL;
 
 	while (p != dnsCache[currentInd].end())
 	{
@@ -7270,7 +7270,7 @@ void listDhcpCache()
 {
 	char logBuff[512];
 	dhcpMap::iterator p = dhcpCache.begin();
-	data7 *cache = NULL;
+	CachedData *cache = NULL;
 
 	while (p != dhcpCache.end())
 	{
@@ -7289,7 +7289,7 @@ void checkSize()
 	//sprintf(logBuff, "Start Cache size %u=%u",dnsCache[currentInd].size(),dnsAge[currentInd].size());
 	//debug(logBuff);
 
-	data7 *cache = NULL;
+	CachedData *cache = NULL;
 	expiryMap::iterator p;
 	//MYBYTE maxDelete = 3;
 
@@ -7311,7 +7311,7 @@ void checkSize()
 
 		if (cache && cache->expiry > t)
 		{
-			dnsAge[currentInd].insert(pair<time_t, data7*>(cache->expiry, cache));
+			dnsAge[currentInd].insert(pair<time_t, CachedData*>(cache->expiry, cache));
 			//sprintf(logBuff, "Entry %s being advanced", cache->name);
 			//logMess(logBuff, 1);
 		}
@@ -7377,7 +7377,7 @@ void checkSize()
 				q = p;
 				p++;
 				dhcpAge.erase(q);
-				dhcpAge.insert(pair<time_t, data7*>(cache->expiry, cache));
+				dhcpAge.insert(pair<time_t, CachedData*>(cache->expiry, cache));
 			}
 			else
 			{
@@ -7398,7 +7398,7 @@ void checkSize()
 */
 }
 
-void delDnsEntry(data7* cache)
+void delDnsEntry(CachedData* cache)
 {
 	hostMap::iterator r = dnsCache[currentInd].find(cache->mapname);
 
@@ -7476,7 +7476,7 @@ MYDWORD calcMask(MYDWORD rangeStart, MYDWORD rangeEnd)
 char *findHost(char *tempbuff, MYDWORD ip)
 {
 	IP2String(tempbuff, htonl(ip));
-	data7 *cache = findEntry(tempbuff, DNS_TYPE_PTR);
+	CachedData *cache = findEntry(tempbuff, DNS_TYPE_PTR);
 
 	if (cache)
 		strcpy(tempbuff, cache->hostname);
@@ -7486,7 +7486,7 @@ char *findHost(char *tempbuff, MYDWORD ip)
 	return tempbuff;
 }
 
-data7 *findEntry(char *key, MYBYTE dnsType, MYBYTE cType)
+CachedData *findEntry(char *key, MYBYTE dnsType, MYBYTE cType)
 {
 	char tempbuff[512];
 	hostMap::iterator it = dnsCache[currentInd].find(setMapName(tempbuff, key, dnsType));
@@ -7502,7 +7502,7 @@ data7 *findEntry(char *key, MYBYTE dnsType, MYBYTE cType)
 	return NULL;
 }
 
-data7 *findEntry(char *key, MYBYTE dnsType)
+CachedData *findEntry(char *key, MYBYTE dnsType)
 {
 	char tempbuff[512];
 	//printf("finding %u=%s\n",ind,key);
@@ -7514,7 +7514,7 @@ data7 *findEntry(char *key, MYBYTE dnsType)
 	return NULL;
 }
 
-data7 *findQueue(char *key)
+CachedData *findQueue(char *key)
 {
 	//printf("finding %u=%s\n",ind,key);
 	hostMap::iterator it = dnsCache[currentInd].find(key);
@@ -7525,14 +7525,14 @@ data7 *findQueue(char *key)
 	return NULL;
 }
 
-data7 *findDHCPEntry(char *key)
+CachedData *findDHCPEntry(char *key)
 {
 	//printf("finding %u=%s\n",ind,key);
 	myLower(key);
 	dhcpMap::iterator it = dhcpCache.find(key);
 
 	if (it != dhcpCache.end() && it->second) {
-		for (dhcpMap::iterator it2 = dhcpCache.begin(); it2 != dhcpCache.end()) {
+		for (dhcpMap::iterator it2 = dhcpCache.begin(); it2 != dhcpCache.end();) {
 			if (it2->second) {
 				if (!strcmp(it2->second->hostname, it->second->hostname)) {
 					if (!strcmp(it2->second->mapname, it->second->mapname)) {
@@ -7553,13 +7553,13 @@ data7 *findDHCPEntry(char *key)
 	return NULL;
 }
 
-void addEntry(data7 *entry)
+void addEntry(CachedData *entry)
 {
 	myLower(entry->mapname);
-	dnsCache[currentInd].insert(pair<string, data7*>(entry->mapname, entry));
+	dnsCache[currentInd].insert(pair<string, CachedData*>(entry->mapname, entry));
 
 	if (entry->expiry && entry->expiry < INT_MAX)
-		dnsAge[currentInd].insert(pair<time_t, data7*>(entry->expiry, entry));
+		dnsAge[currentInd].insert(pair<time_t, CachedData*>(entry->expiry, entry));
 }
 
 char *cloneString(char *string)
@@ -7779,7 +7779,7 @@ void emptyCache(MYBYTE ind)
 {
 	//debug("emptyCache");
 	char logBuff[512];
-	data7 *cache = NULL;
+	CachedData *cache = NULL;
 
 	//sprintf(logBuff, "Emptying cache[%d] Start %d=%d",ind, dnsCache[ind].size(), dnsAge[ind].size());
 	//logMess(logBuff, 2);
@@ -7977,7 +7977,7 @@ MYDWORD getZone(MYBYTE ind, char *zone)
 	char *dp;
 	MYDWORD ip;
 	data5 req;
-	data7 *cache = NULL;
+	CachedData *cache = NULL;
 
 	memset(&lump, 0, sizeof(data71));
 	lump.cType = CTYPE_LOCALHOST_A;
@@ -7989,7 +7989,7 @@ MYDWORD getZone(MYBYTE ind, char *zone)
 	{
 		cache->ip = ntohl(inet_addr(localhost_ip));
 		cache->expiry = INT_MAX;
-		dnsCache[ind].insert(pair<string, data7*>(cache->mapname, cache));
+		dnsCache[ind].insert(pair<string, CachedData*>(cache->mapname, cache));
 	}
 
 	memset(&lump, 0, sizeof(data71));
@@ -8002,7 +8002,7 @@ MYDWORD getZone(MYBYTE ind, char *zone)
 	if (cache)
 	{
 		cache->expiry = INT_MAX;
-		dnsCache[ind].insert(pair<string, data7*>(cache->mapname, cache));
+		dnsCache[ind].insert(pair<string, CachedData*>(cache->mapname, cache));
 	}
 
 	memset(&req, 0, sizeof(data5));
@@ -8172,7 +8172,7 @@ MYDWORD getZone(MYBYTE ind, char *zone)
 						{
 							cache->ip = ip;
 							cache->expiry = INT_MAX;
-							dnsCache[ind].insert(pair<string, data7*>(cache->mapname, cache));
+							dnsCache[ind].insert(pair<string, CachedData*>(cache->mapname, cache));
 							added++;
 						}
 						break;
@@ -8197,7 +8197,7 @@ MYDWORD getZone(MYBYTE ind, char *zone)
 							if (cache)
 							{
 								cache->expiry = INT_MAX;
-								dnsCache[ind].insert(pair<string, data7*>(cache->mapname, cache));
+								dnsCache[ind].insert(pair<string, CachedData*>(cache->mapname, cache));
 								added++;
 							}
 						}
@@ -8249,7 +8249,7 @@ MYDWORD getZone(MYBYTE ind, char *zone)
 
 						if (cache)
 						{
-							dnsCache[ind].insert(pair<string, data7*>(cache->mapname, cache));
+							dnsCache[ind].insert(pair<string, CachedData*>(cache->mapname, cache));
 							cache->expiry = INT_MAX;
 							added++;
 						}
@@ -8436,7 +8436,7 @@ bool getSecondary()
 						makeLocal(req.cname);
 
 						dhcpMap::iterator p = dhcpCache.begin();
-						data7 *dhcpEntry = NULL;
+						CachedData *dhcpEntry = NULL;
 
 						for (; p != dhcpCache.end(); p++)
 						{
@@ -9122,7 +9122,7 @@ void __cdecl init(void *lpParam)
 					{
 						if ((nameType == QTYPE_A_BARE || nameType == QTYPE_A_LOCAL || nameType == QTYPE_A_ZONE))
 						{
-							data7 *cache = findEntry(name, DNS_TYPE_A);
+							CachedData *cache = findEntry(name, DNS_TYPE_A);
 
 							if (!cache)
 							{
@@ -9380,7 +9380,7 @@ void __cdecl init(void *lpParam)
 
 			if (dhcpService)
 			{
-				data7 *cache = NULL;
+				CachedData *cache = NULL;
 				hostMap::iterator p = dnsCache[0].begin();
 
 				while (p != dnsCache[0].end())
@@ -10260,7 +10260,7 @@ void getInterfaces(data1 *network)
 
 void __cdecl updateStateFile(void *lpParam)
 {
-	data7 *dhcpEntry = (data7*)lpParam;
+	CachedData *dhcpEntry = (CachedData*)lpParam;
 	data8 dhcpData;
 	memset(&dhcpData, 0, sizeof(data8));
 	dhcpData.bp_hlen = 16;
@@ -10432,7 +10432,7 @@ MYWORD gdmess(data9 *req, MYBYTE sockInd)
 
 //	if (!req->hostname[0] && req->dhcpp.header.bp_ciaddr)
 //	{
-//		data7* cache = findEntry(IP2String(ipbuff, htonl(req->dhcpp.header.bp_ciaddr)), DNS_TYPE_PTR);
+//		CachedData* cache = findEntry(IP2String(ipbuff, htonl(req->dhcpp.header.bp_ciaddr)), DNS_TYPE_PTR);
 //
 //		if (cache)
 //			strcpy(req->hostname, cache->hostname);
@@ -10757,10 +10757,10 @@ void logTCPMess(data5 *req, char *logBuff, MYBYTE logLevel)
 	}
 }
 
-data7 *createCache(data71 *lump)
+CachedData *createCache(data71 *lump)
 {
-	MYWORD dataSize = 4 + sizeof(data7) + strlen(lump->mapname);
-	data7 *cache = NULL;
+	MYWORD dataSize = 4 + sizeof(CachedData) + strlen(lump->mapname);
+	CachedData *cache = NULL;
 
 	switch (lump->cType)
 	{
@@ -10768,7 +10768,7 @@ data7 *createCache(data71 *lump)
 		{
 			dataSize += 64;
 			dataSize += lump->optionSize;
-			cache = (data7*)calloc(1, dataSize);
+			cache = (CachedData*)calloc(1, dataSize);
 
 			if (!cache)
 				return NULL;
@@ -10799,7 +10799,7 @@ data7 *createCache(data71 *lump)
 			//debug("about to create queue");
 			dataSize += strlen(lump->query);
 			dataSize +=  sizeof(SOCKADDR_IN);
-			cache = (data7*)calloc(1, dataSize);
+			cache = (CachedData*)calloc(1, dataSize);
 
 			if (!cache)
 				return NULL;
@@ -10829,7 +10829,7 @@ data7 *createCache(data71 *lump)
 		case CTYPE_CACHED:
 		{
 			dataSize += lump->bytes;
-			cache = (data7*)calloc(1, dataSize);
+			cache = (CachedData*)calloc(1, dataSize);
 
 			if (!cache)
 				return NULL;
@@ -10860,7 +10860,7 @@ data7 *createCache(data71 *lump)
 		case CTYPE_EXT_CNAME:
 		{
 			dataSize += strlen(lump->hostname);
-			cache = (data7*)calloc(1, dataSize);
+			cache = (CachedData*)calloc(1, dataSize);
 
 			if (!cache)
 				return NULL;
@@ -10881,7 +10881,7 @@ data7 *createCache(data71 *lump)
 
 		default:
 		{
-			cache = (data7*)calloc(1, dataSize);
+			cache = (CachedData*)calloc(1, dataSize);
 
 			if (!cache)
 				return NULL;

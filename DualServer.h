@@ -189,7 +189,7 @@ struct data18
 	bool done;
 };
 
-struct data7 //cache
+struct CachedData //cache
 {
 	char *mapname;
 	time_t expiry;
@@ -246,8 +246,8 @@ struct data71 //Lump
 	MYBYTE dnsType;
 };
 
-typedef multimap<string, data7*> hostMap;
-typedef multimap<time_t, data7*> expiryMap;
+typedef multimap<string, CachedData*> hostMap;
+typedef multimap<time_t, CachedData*> expiryMap;
 
 struct data5 //dns request
 {
@@ -569,7 +569,7 @@ struct data3
 	MYBYTE value[256];
 };
 
-typedef map<string, data7*> dhcpMap;
+typedef map<string, CachedData*> dhcpMap;
 
 struct dhcp_header
 {
@@ -609,7 +609,7 @@ struct data13 //dhcp range
 	MYDWORD mask;
 	MYBYTE *options;
 	time_t *expiry;
-	data7 **dhcpEntry;
+	CachedData **dhcpEntry;
 };
 
 struct data14 //rangeSet
@@ -678,7 +678,7 @@ struct data9 //dhcpRequst
 	socklen_t sockLen;
 	MYWORD messsize;
 	MYBYTE *vp;
-	data7 *dhcpEntry;
+	CachedData *dhcpEntry;
 	data3 agentOption;
 	data3 clientId;
 	data3 subnet;
@@ -839,7 +839,7 @@ MYDWORD getSerial(char *zone);
 MYDWORD getZone(MYBYTE ind, char *zone);
 MYDWORD resad(data9 *req);
 MYDWORD sdmess(data9 *req);
-MYDWORD sendRepl(data7 *dhcpEntry);
+MYDWORD sendRepl(CachedData *dhcpEntry);
 MYDWORD sendRepl(data9 *req);
 MYWORD fQu(char *query, dnsPacket *mess, char *raw);
 MYWORD fUShort(void *raw);
@@ -884,11 +884,11 @@ char getRangeInd(MYDWORD ip);
 char* getResult(data5 *req);
 char* myGetToken(char* buff, MYBYTE index);
 char* myTrim(char *target, char *source);
-data7 *createCache(data71 *lump);
-data7 *findDHCPEntry(char *key);
-data7 *findEntry(char *key, MYBYTE dnsType);
-data7 *findEntry(char *key, MYBYTE dnsType, MYBYTE cType);
-data7 *findQueue(char *key);
+CachedData *createCache(data71 *lump);
+CachedData *findDHCPEntry(char *key);
+CachedData *findEntry(char *key, MYBYTE dnsType);
+CachedData *findEntry(char *key, MYBYTE dnsType, MYBYTE cType);
+CachedData *findQueue(char *key);
 int getIndex(char rangeInd, MYDWORD ip);
 int main(int argc, TCHAR* argv[]);
 void WINAPI ServiceControlHandler(DWORD controlCode);
@@ -902,7 +902,7 @@ void __cdecl sendToken(void *lpParam);
 void __cdecl updateStateFile(void *lpParam);
 void add2Cache(char *hostname, MYDWORD ip, time_t expiry, MYBYTE aType, MYBYTE pType);
 void addDHCPRange(char *dp);
-void addEntry(data7 *entry);
+void addEntry(CachedData *entry);
 void addHostNotFound(char *hostname);
 void addMacRange(MYBYTE rangeSetInd, char *macRange);
 void addOptions(data9 *req);
@@ -911,12 +911,12 @@ void addRRAOne(data5 *req);
 void addRRAd(data5 *req);
 void addRRAny(data5 *req);
 void addRRCNOne(data5 *req);
-void addRRCache(data5 *req, data7 *cache);
+void addRRCache(data5 *req, CachedData *cache);
 void addRREmpty(data5 *req);
 void addRRError(data5 *req, MYBYTE rcode);
 void addRRExt(data5 *req);
-void addRRLocalhostA(data5 *req, data7 *cache);
-void addRRLocalhostPtr(data5 *req, data7 *cache);
+void addRRLocalhostA(data5 *req, CachedData *cache);
+void addRRLocalhostPtr(data5 *req, CachedData *cache);
 void addRRMX(data5 *req);
 void addRRMXOne(data5 *req, MYBYTE m);
 void addRRNS(data5 *req);
@@ -934,7 +934,7 @@ void checkSize();
 void closeConn();
 void debug(const char *mess);
 void debug(int i);
-void delDnsEntry(data7* cache);
+void delDnsEntry(CachedData* cache);
 void emptyCache(MYBYTE ind);
 void expireEntry(MYDWORD ip);
 void getInterfaces(data1 *network);
@@ -962,9 +962,9 @@ void runService();
 void sendScopeStatus(data19 *req);
 void sendServerName();
 void sendStatus(data19 *req);
-void setLeaseExpiry(data7 *dhcpEntry);
-void setLeaseExpiry(data7 *dhcpEntry, MYDWORD lease);
-void setTempLease(data7 *dhcpEntry);
+void setLeaseExpiry(CachedData *dhcpEntry);
+void setLeaseExpiry(CachedData *dhcpEntry, MYDWORD lease);
+void setTempLease(CachedData *dhcpEntry);
 void showError(MYDWORD enumber);
 void uninstallService();
 void updateDNS(data9 *req);
