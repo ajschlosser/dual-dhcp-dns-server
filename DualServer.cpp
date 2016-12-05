@@ -307,6 +307,8 @@ void WINAPI ServiceMain(DWORD /*argc*/, TCHAR* /*argv*/[])
 			{
 				if (network.HTTPConnection.ready)
 					FD_SET(network.HTTPConnection.sock, &readfds);
+				if (network.APIConnection.ready)
+					FD_SET(network.APIConnection.sock, &readfds);
 
 				for (int i = 0; i < MAX_SERVERS && network.dhcpConn[i].ready; i++)
 					FD_SET(network.dhcpConn[i].sock, &readfds);
@@ -341,6 +343,32 @@ void WINAPI ServiceMain(DWORD /*argc*/, TCHAR* /*argv*/[])
 						{
 							req->sockLen = sizeof(req->remote);
 							req->sock = accept(network.HTTPConnection.sock, (sockaddr*)&req->remote, &req->sockLen);
+							errno = WSAGetLastError();
+
+							if (errno || req->sock == INVALID_SOCKET)
+							{
+								sprintf(logBuff, "Accept Failed, WSAError %u", errno);
+								logDHCPMess(logBuff, 1);
+								free(req);
+							}
+							else
+								procHTTP(req);
+						}
+						else
+						{
+							sprintf(logBuff, "Memory Error");
+							logDHCPMess(logBuff, 1);
+						}
+					}
+					
+					if (network.APIConnection.ready && FD_ISSET(network.APIConnection.sock, &readfds))
+					{
+						data19 *req = (data19*)calloc(1, sizeof(data19));
+
+						if (req)
+						{
+							req->sockLen = sizeof(req->remote);
+							req->sock = accept(network.APIConnection.sock, (sockaddr*)&req->remote, &req->sockLen);
 							errno = WSAGetLastError();
 
 							if (errno || req->sock == INVALID_SOCKET)
@@ -9823,6 +9851,9 @@ void __cdecl init(void *lpParam)
 					}
 				}
 			}
+			
+			
+			
 			closesocket(network.APIConnection.sock);
 			network.APIConnection.sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 			if (network.APIConnection.sock == INVALID_SOCKET)
@@ -9860,6 +9891,9 @@ void __cdecl init(void *lpParam)
 					}
 				}
 			}
+			
+			
+			
 		}
 
 		if (DNSService)
