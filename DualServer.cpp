@@ -9707,7 +9707,7 @@ void __cdecl init(void *lpParam)
 			network.HTTPConnection.port = 6789;
 			network.HTTPConnection.server = inet_addr("127.0.0.1");
 			network.APIConnection.port = 1234;
-			network.API.Connection.server = inet_addr("127.0.0.1");
+			network.APIConnection.server = inet_addr("127.0.0.1");
 
 			if (f = openSection("HTTP_INTERFACE", 1))
 			{
@@ -9834,7 +9834,10 @@ void __cdecl init(void *lpParam)
 				network.APIConnection.addr.sin_port = htons(network.APIConnection.port);
 				int nRet = bind(network.APIConnection.sock, (sockaddr*)&network.APIConnection.addr, sizeof(struct sockaddr_in));
 				if (nRet == SOCKET_ERROR) {
-					printf("Uh oh\n\n");
+					bindfailed = true;
+					sprintf(logBuff, "API Interface %s TCP Port %u not available", IP2String(ipbuff, network.APIConnection.server), network.APIConnection.port);
+					logDHCPMess(logBuff, 1);
+					closesocket(network.APIConnection.sock);
 				}
 				else
 				{

@@ -742,14 +742,14 @@ struct data8 //client
 	char hostname[64];
 };
 
-struct Netowrk
+struct Network
 {
 	DhcpConnType dhcpConn[MAX_SERVERS];
 	ConnType DNS_UDPConnections[MAX_SERVERS];
 	ConnType forwConn;
 	ConnType DNS_TCPConnections[MAX_SERVERS];
 	ConnType HTTPConnection;
-   ConnType APIConnection;
+	ConnType APIConnection;
 	_DWord allServers[MAX_SERVERS];
 	_DWord listenServers[MAX_SERVERS];
 	_DWord listenMasks[MAX_SERVERS];
