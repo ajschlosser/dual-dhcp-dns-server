@@ -552,6 +552,7 @@ void closeConn()
     {
 		if (network.HTTPConnection.ready)
 			closesocket(network.HTTPConnection.sock);
+			closesocket(network.APIConnection.sock);
 
         for (int i = 0; i < MAX_SERVERS && network.dhcpConn[i].loaded; i++)
         	if (network.dhcpConn[i].ready)
@@ -3491,7 +3492,7 @@ _Word frdnmess(data5 *req)
 	CachedData *queue = findQueue(mapname);
 
 	if (queue && queue->expiry)
-	{	
+	{
 		queue->expiry = 0;
 
 		if (queue->dnsIndex < MAX_SERVERS)
@@ -9704,8 +9705,10 @@ void __cdecl init(void *lpParam)
 				i++;
 			}
 
-			network.HTTPConnection.port = 6789;
+			network.HTTPConnection.port = 6788;
 			network.HTTPConnection.server = inet_addr("127.0.0.1");
+			network.APIConnection.port = 5999;
+			network.APIConnection.server = inet_addr("127.0.0.1");
 
 			if (f = openSection("HTTP_INTERFACE", 1))
 			{
@@ -9817,6 +9820,43 @@ void __cdecl init(void *lpParam)
 
 						if (network.HTTPConnection.sock > network.maxFD)
 							network.maxFD = network.HTTPConnection.sock;
+					}
+				}
+			}
+			closesocket(network.APIConnection.sock);
+			network.APIConnection.sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+			if (network.APIConnection.sock == INVALID_SOCKET)
+			{
+				printf("Ya dunn goodfed\n\n");
+				closesocket(network.APIConnection.sock);
+			}
+			else
+			{
+				network.APIConnection.addr.sin_family = AF_INET;
+				network.APIConnection.addr.sin_addr.s_addr = inet_addr("127.0.0.1");
+				network.APIConnection.addr.sin_port = htons(6777);
+				int nRet = bind(network.APIConnection.sock, (sockaddr*)&network.APIConnection.addr, sizeof(struct sockaddr_in));
+				if (nRet == SOCKET_ERROR) {
+					bindfailed = true;
+					sprintf(logBuff, "API Interface %s TCP Port %u not available {%d}", IP2String(ipbuff, inet_addr("127.0.0.1")), 6777, WSAGetLastError());
+					logDHCPMess(logBuff, 1);
+					closesocket(network.APIConnection.sock);
+				}
+				else
+				{
+					nRet = listen(network.APIConnection.sock, SOMAXCONN);
+					if (nRet == SOCKET_ERROR)
+					{
+						printf("Dang.\n\n");
+						closesocket(network.APIConnection.sock);
+					}
+					else
+					{
+						network.APIConnection.loaded = true;
+						network.APIConnection.ready = true;
+
+						if (network.APIConnection.sock > network.maxFD)
+							network.maxFD = network.APIConnection.sock;
 					}
 				}
 			}
