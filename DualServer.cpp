@@ -80,6 +80,7 @@ const char RANGESET[] = "RANGE_SET";
 const char GLOBALOPTIONS[] = "GLOBAL_OPTIONS";
 const char base64[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 const char send200[] = "HTTP/1.1 200 OK\r\nDate: %s\r\nLast-Modified: %s\r\nContent-Type: text/html\r\nConnection: Close\r\nContent-Length:         \r\n\r\n";
+const char send200JSON[] = "HTTP/1.1 200 OK\r\nDate: %s\r\nLast-Modified: %s\r\nContent-Type: application/json\r\nConnection: Close\r\nContent-Length:         \r\n\r\n";
 //const char send200[] = "HTTP/1.1 200 OK\r\nDate: %s\r\nLast-Modified: %s\r\nContent-Type: text/html\r\nConnection: Close\r\nTransfer-Encoding: chunked\r\n";
 //const char send403[] = "HTTP/1.1 403 Forbidden\r\nDate: %s\r\nLast-Modified: %s\r\nContent-Type: text/html\r\nConnection: Close\r\n\r\n";
 const char send403[] = "HTTP/1.1 403 Forbidden\r\n\r\n<h1>403 Forbidden</h1>";
@@ -2082,64 +2083,75 @@ void sendStatus(data19 *req)
 	char *maxData = req->dp + (req->memSize - 512);
 	tm *ttm = gmtime(&t);
 	strftime(tempbuff, sizeof(tempbuff), "%a, %d %b %Y %H:%M:%S GMT", ttm);
-	fp += sprintf(fp, send200, tempbuff, tempbuff);
+	fp += sprintf(fp, send200JSON, tempbuff, tempbuff);
 	char *contentStart = fp;
-	fp += sprintf(fp, htmlStart, htmlTitle);
-	fp += sprintf(fp, bodyStart, sVersion);
-	fp += sprintf(fp, "<table border=\"1\" cellpadding=\"1\" width=\"640\" bgcolor=\"#b8b8b8\">\n");
-
-	if (config.dhcpRepl > t)
-	{
-		fp += sprintf(fp, "<tr><th colspan=\"5\"><font size=\"5\"><i>Active Leases</i></font></th></tr>\n");
-		fp += sprintf(fp, "<tr><th>Mac Address</th><th>IP</th><th>Lease Expiry</th><th>Hostname (first 20 chars)</th><th>Server</th></tr>\n");
-	}
-	else
-	{
-		fp += sprintf(fp, "<tr><th colspan=\"4\"><font size=\"5\"><i>Active Leases</i></font></th></tr>\n");
-		fp += sprintf(fp, "<tr><th>Mac Address</th><th>IP</th><th>Lease Expiry</th><th>Hostname (first 20 chars)</th></tr>\n");
-	}
-
+	fp += sprintf(fp, "\"{\n\tleases: [\n");
 	for (p = dhcpCache.begin(); kRunning && p != dhcpCache.end() && fp < maxData; p++)
 	{
-		if ((dhcpEntry = p->second) && dhcpEntry->display && dhcpEntry->expiry >= t)
-		{
-			fp += sprintf(fp, "<tr>");
-			fp += sprintf(fp, td200, dhcpEntry->mapname);
-			fp += sprintf(fp, td200, IP2String(tempbuff, dhcpEntry->ip));
-
-			if (dhcpEntry->expiry >= INT_MAX)
-				fp += sprintf(fp, td200, "Infinity");
-			else
-			{
-				tm *ttm = localtime(&dhcpEntry->expiry);
-				strftime(tempbuff, sizeof(tempbuff), "%d-%b-%y %X", ttm);
-				fp += sprintf(fp, td200, tempbuff);
-			}
-
-			if (dhcpEntry->hostname[0])
-			{
-				strcpy(tempbuff, dhcpEntry->hostname);
-				tempbuff[20] = 0;
-				fp += sprintf(fp, td200, tempbuff);
-			}
-			else
-				fp += sprintf(fp, td200, "&nbsp;");
-
-			if (config.dhcpRepl > t)
-			{
-				if (dhcpEntry->local && config.replication == 1)
-					fp += sprintf(fp, td200, "Primary");
-				else if (dhcpEntry->local && config.replication == 2)
-					fp += sprintf(fp, td200, "Secondary");
-				else if (config.replication == 1)
-					fp += sprintf(fp, td200, "Secondary");
-				else
-					fp += sprintf(fp, td200, "Primary");
-			}
-
-			fp += sprintf(fp, "</tr>\n");
-		}
+		fp += sprintf(fp, "\t\t" + dhcpEntry->mapname + "\n");
 	}
+	fp += sprintf("\t]\n}\"");
+	
+	
+	
+	// fp += sprintf(fp, send200, tempbuff, tempbuff);
+	// char *contentStart = fp;
+	// fp += sprintf(fp, htmlStart, htmlTitle);
+	// fp += sprintf(fp, bodyStart, sVersion);
+	// fp += sprintf(fp, "<table border=\"1\" cellpadding=\"1\" width=\"640\" bgcolor=\"#b8b8b8\">\n");
+	// 
+	// if (config.dhcpRepl > t)
+	// {
+	// 	fp += sprintf(fp, "<tr><th colspan=\"5\"><font size=\"5\"><i>Active Leases</i></font></th></tr>\n");
+	// 	fp += sprintf(fp, "<tr><th>Mac Address</th><th>IP</th><th>Lease Expiry</th><th>Hostname (first 20 chars)</th><th>Server</th></tr>\n");
+	// }
+	// else
+	// {
+	// 	fp += sprintf(fp, "<tr><th colspan=\"4\"><font size=\"5\"><i>Active Leases</i></font></th></tr>\n");
+	// 	fp += sprintf(fp, "<tr><th>Mac Address</th><th>IP</th><th>Lease Expiry</th><th>Hostname (first 20 chars)</th></tr>\n");
+	// }
+	// 
+	// for (p = dhcpCache.begin(); kRunning && p != dhcpCache.end() && fp < maxData; p++)
+	// {
+	// 	if ((dhcpEntry = p->second) && dhcpEntry->display && dhcpEntry->expiry >= t)
+	// 	{
+	// 		fp += sprintf(fp, "<tr>");
+	// 		fp += sprintf(fp, td200, dhcpEntry->mapname);
+	// 		fp += sprintf(fp, td200, IP2String(tempbuff, dhcpEntry->ip));
+	// 
+	// 		if (dhcpEntry->expiry >= INT_MAX)
+	// 			fp += sprintf(fp, td200, "Infinity");
+	// 		else
+	// 		{
+	// 			tm *ttm = localtime(&dhcpEntry->expiry);
+	// 			strftime(tempbuff, sizeof(tempbuff), "%d-%b-%y %X", ttm);
+	// 			fp += sprintf(fp, td200, tempbuff);
+	// 		}
+	// 
+	// 		if (dhcpEntry->hostname[0])
+	// 		{
+	// 			strcpy(tempbuff, dhcpEntry->hostname);
+	// 			tempbuff[20] = 0;
+	// 			fp += sprintf(fp, td200, tempbuff);
+	// 		}
+	// 		else
+	// 			fp += sprintf(fp, td200, "&nbsp;");
+	// 
+	// 		if (config.dhcpRepl > t)
+	// 		{
+	// 			if (dhcpEntry->local && config.replication == 1)
+	// 				fp += sprintf(fp, td200, "Primary");
+	// 			else if (dhcpEntry->local && config.replication == 2)
+	// 				fp += sprintf(fp, td200, "Secondary");
+	// 			else if (config.replication == 1)
+	// 				fp += sprintf(fp, td200, "Secondary");
+	// 			else
+	// 				fp += sprintf(fp, td200, "Primary");
+	// 		}
+	// 
+	// 		fp += sprintf(fp, "</tr>\n");
+	// 	}
+	// }
 
 /*
 	fp += sprintf(fp, "</table>\n<br>\n<table border=\"1\" width=\"640\" cellpadding=\"1\" bgcolor=\"#b8b8b8\">\n");
@@ -2173,63 +2185,63 @@ void sendStatus(data19 *req)
 	if (colNum)
 		fp += sprintf(fp, "</tr>\n");
 */
-	fp += sprintf(fp, "</table>\n<br>\n<table border=\"1\" cellpadding=\"1\" width=\"640\" bgcolor=\"#b8b8b8\">\n");
-	fp += sprintf(fp, "<tr><th colspan=\"4\"><font size=\"5\"><i>Free Dynamic Leases</i></font></th></tr>\n");
-	fp += sprintf(fp, "<tr><td><b>DHCP Range</b></td><td align=\"right\"><b>Available Leases</b></td><td align=\"right\"><b>Free Leases</b></td></tr>\n");
-
-	for (char rangeInd = 0; kRunning && rangeInd < config.rangeCount && fp < maxData; rangeInd++)
-	{
-		float ipused = 0;
-		float ipfree = 0;
-		int ind = 0;
-
-		for (_DWord iip = config.dhcpRanges[rangeInd].rangeStart; iip <= config.dhcpRanges[rangeInd].rangeEnd; iip++, ind++)
-		{
-			if (config.dhcpRanges[rangeInd].expiry[ind] < t)
-				ipfree++;
-			else if (config.dhcpRanges[rangeInd].dhcpEntry[ind] && !(config.dhcpRanges[rangeInd].dhcpEntry[ind]->fixed))
-				ipused++;
-		}
-
-		IP2String(tempbuff, ntohl(config.dhcpRanges[rangeInd].rangeStart));
-		IP2String(ipbuff, ntohl(config.dhcpRanges[rangeInd].rangeEnd));
-		fp += sprintf(fp, "<tr><td>%s - %s</td><td align=\"right\">%5.0f</td><td align=\"right\">%5.0f</td></tr>\n", tempbuff, ipbuff, (ipused + ipfree), ipfree);
-	}
-
-	fp += sprintf(fp, "</table>\n<br>\n<table border=\"1\" width=\"640\" cellpadding=\"1\" bgcolor=\"#b8b8b8\">\n");
-	fp += sprintf(fp, "<tr><th colspan=\"4\"><font size=\"5\"><i>Free Static Leases</i></font></th></tr>\n");
-	fp += sprintf(fp, "<tr><th>Mac Address</th><th>IP</th><th>Mac Address</th><th>IP</th></tr>\n");
-
-	_Byte colNum = 0;
-
-	for (p = dhcpCache.begin(); kRunning && p != dhcpCache.end() && fp < maxData; p++)
-	{
-		if ((dhcpEntry = p->second) && dhcpEntry->fixed && dhcpEntry->expiry < t)
-		{
-			if (!colNum)
-			{
-				fp += sprintf(fp, "<tr>");
-				colNum = 1;
-			}
-			else if (colNum == 1)
-			{
-				colNum = 2;
-			}
-			else if (colNum == 2)
-			{
-				fp += sprintf(fp, "</tr>\n<tr>");
-				colNum = 1;
-			}
-
-			fp += sprintf(fp, td200, dhcpEntry->mapname);
-			fp += sprintf(fp, td200, IP2String(tempbuff, dhcpEntry->ip));
-		}
-	}
-
-	if (colNum)
-		fp += sprintf(fp, "</tr>\n");
-
-	fp += sprintf(fp, "</table>\n</body>\n</html>");
+	// fp += sprintf(fp, "</table>\n<br>\n<table border=\"1\" cellpadding=\"1\" width=\"640\" bgcolor=\"#b8b8b8\">\n");
+	// fp += sprintf(fp, "<tr><th colspan=\"4\"><font size=\"5\"><i>Free Dynamic Leases</i></font></th></tr>\n");
+	// fp += sprintf(fp, "<tr><td><b>DHCP Range</b></td><td align=\"right\"><b>Available Leases</b></td><td align=\"right\"><b>Free Leases</b></td></tr>\n");
+	// 
+	// for (char rangeInd = 0; kRunning && rangeInd < config.rangeCount && fp < maxData; rangeInd++)
+	// {
+	// 	float ipused = 0;
+	// 	float ipfree = 0;
+	// 	int ind = 0;
+	// 
+	// 	for (_DWord iip = config.dhcpRanges[rangeInd].rangeStart; iip <= config.dhcpRanges[rangeInd].rangeEnd; iip++, ind++)
+	// 	{
+	// 		if (config.dhcpRanges[rangeInd].expiry[ind] < t)
+	// 			ipfree++;
+	// 		else if (config.dhcpRanges[rangeInd].dhcpEntry[ind] && !(config.dhcpRanges[rangeInd].dhcpEntry[ind]->fixed))
+	// 			ipused++;
+	// 	}
+	// 
+	// 	IP2String(tempbuff, ntohl(config.dhcpRanges[rangeInd].rangeStart));
+	// 	IP2String(ipbuff, ntohl(config.dhcpRanges[rangeInd].rangeEnd));
+	// 	fp += sprintf(fp, "<tr><td>%s - %s</td><td align=\"right\">%5.0f</td><td align=\"right\">%5.0f</td></tr>\n", tempbuff, ipbuff, (ipused + ipfree), ipfree);
+	// }
+	// 
+	// fp += sprintf(fp, "</table>\n<br>\n<table border=\"1\" width=\"640\" cellpadding=\"1\" bgcolor=\"#b8b8b8\">\n");
+	// fp += sprintf(fp, "<tr><th colspan=\"4\"><font size=\"5\"><i>Free Static Leases</i></font></th></tr>\n");
+	// fp += sprintf(fp, "<tr><th>Mac Address</th><th>IP</th><th>Mac Address</th><th>IP</th></tr>\n");
+	// 
+	// _Byte colNum = 0;
+	// 
+	// for (p = dhcpCache.begin(); kRunning && p != dhcpCache.end() && fp < maxData; p++)
+	// {
+	// 	if ((dhcpEntry = p->second) && dhcpEntry->fixed && dhcpEntry->expiry < t)
+	// 	{
+	// 		if (!colNum)
+	// 		{
+	// 			fp += sprintf(fp, "<tr>");
+	// 			colNum = 1;
+	// 		}
+	// 		else if (colNum == 1)
+	// 		{
+	// 			colNum = 2;
+	// 		}
+	// 		else if (colNum == 2)
+	// 		{
+	// 			fp += sprintf(fp, "</tr>\n<tr>");
+	// 			colNum = 1;
+	// 		}
+	// 
+	// 		fp += sprintf(fp, td200, dhcpEntry->mapname);
+	// 		fp += sprintf(fp, td200, IP2String(tempbuff, dhcpEntry->ip));
+	// 	}
+	// }
+	// 
+	// if (colNum)
+	// 	fp += sprintf(fp, "</tr>\n");
+	// 
+	// fp += sprintf(fp, "</table>\n</body>\n</html>");
 	_Byte x = sprintf(tempbuff, "%u", (fp - contentStart));
 	memcpy((contentStart - 12), tempbuff, x);
 	req->bytes = fp - req->dp;
