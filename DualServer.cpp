@@ -3513,9 +3513,9 @@ _Word frdnmess(data5 *req)
 			_Byte rid = (queue->dnsIndex - 128) / 2;
 			DNSRoute *dnsRoute = &config.dnsRoutes[rid];
 
-			if (dnsRoute->dns[0] == req->remote.sin_addr.s_addr)
+			if (dnsRoute->DNS[0] == req->remote.sin_addr.s_addr)
 				dnsRoute->currentDNS = 0;
-			else if (dnsRoute->dns[1] == req->remote.sin_addr.s_addr)
+			else if (dnsRoute->DNS[1] == req->remote.sin_addr.s_addr)
 				dnsRoute->currentDNS = 1;
 		}
 
@@ -4988,7 +4988,7 @@ void recvRepl(data9 *req)
 //			logDHCPMess(logBuff, 2);
 //		}
 
-		if (req->dns)
+		if (req->DNS)
 			config.dnsRepl = t + 650;
 
 		if (config.replication == 1)
@@ -7337,7 +7337,7 @@ void checkSize()
 					DNSRoute *dnsRoute = &config.dnsRoutes[(cache->dnsIndex - 128) / 2];
 					_Byte currentDNS = cache->dnsIndex % 2;
 
-					if (dnsRoute->currentDNS == currentDNS && dnsRoute->dns[1])
+					if (dnsRoute->currentDNS == currentDNS && dnsRoute->DNS[1])
 						dnsRoute->currentDNS = 1 - dnsRoute->currentDNS;
 				}
 			}
@@ -10242,7 +10242,7 @@ void getInterfaces(data1 *network)
 				_DWord addr = inet_addr(pIPAddr->IpAddress.String);
 
 				if (!DNSService || !findServer(network->allServers, MAX_SERVERS, addr))
-					addServer(network->dns, MAX_SERVERS, addr);
+					addServer(network->DNS, MAX_SERVERS, addr);
 
 				pIPAddr = pIPAddr->Next;
 			}
@@ -10253,7 +10253,7 @@ void getInterfaces(data1 *network)
 	for (int i = 0; i < MAX_SERVERS && config.specifiedDnsServers[i]; i++)
 	{
 		if (!DNSService || !findServer(network->allServers, MAX_SERVERS, config.specifiedDnsServers[i]))
-			addServer(network->dns, MAX_SERVERS, config.specifiedDnsServers[i]);
+			addServer(network->DNS, MAX_SERVERS, config.specifiedDnsServers[i]);
 	}
 	return;
 }
@@ -10403,7 +10403,7 @@ _Word gdmess(data9 *req, _Byte sockInd)
 				break;
 
 			case DHCP_OPTION_DNS:
-				req->dns = fULong(op->value);
+				req->DNS = fULong(op->value);
 				break;
 
 			case DHCP_OPTION_REBINDINGTIME:
