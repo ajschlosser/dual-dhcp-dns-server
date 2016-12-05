@@ -796,7 +796,7 @@ struct data2
 	_DWord specifiedDnsServers[MAX_SERVERS];
 	_DWord zoneServers[MAX_TCP_CLIENTS];
 	DNSRoute dnsRoutes[MAX_COND_FORW];
-	WildCardHost wildCardHosts[MAX_WILDCARD_HOSTS];
+	WildcardHost wildcardHosts[MAX_WILDCARD_HOSTS];
 	data12 dnsRanges[MAX_DNS_RANGES];
 	data13 dhcpRanges[MAX_DHCP_RANGES];
 	data14 rangeSet[MAX_RANGE_SETS];
