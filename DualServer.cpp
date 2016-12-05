@@ -65,7 +65,7 @@ char cliFile[_MAX_PATH];
 char arpa[] = ".in-addr.arpa";
 char ip6arpa[] = ".ip6.arpa";
 bool dhcpService = true;
-bool dnsService = true;
+bool DNSService = true;
 time_t t = time(NULL);
 timeval tv;
 fd_set readfds;
@@ -290,7 +290,7 @@ void WINAPI ServiceMain(DWORD /*argc*/, TCHAR* /*argv*/[])
 				continue;
 			}
 
-			if (!network.dhcpConn[0].ready && !network.dnsUdpConn[0].ready)
+			if (!network.dhcpConn[0].ready && !network.DNS_UDPConnections[0].ready)
 			{
 				Sleep(1000);
 				network.busy = false;
@@ -305,8 +305,8 @@ void WINAPI ServiceMain(DWORD /*argc*/, TCHAR* /*argv*/[])
 
 			if (dhcpService)
 			{
-				if (network.httpConn.ready)
-					FD_SET(network.httpConn.sock, &readfds);
+				if (network.HTTPConnection.ready)
+					FD_SET(network.HTTPConnection.sock, &readfds);
 
 				for (int i = 0; i < MAX_SERVERS && network.dhcpConn[i].ready; i++)
 					FD_SET(network.dhcpConn[i].sock, &readfds);
@@ -315,13 +315,13 @@ void WINAPI ServiceMain(DWORD /*argc*/, TCHAR* /*argv*/[])
 					FD_SET(config.dhcpReplConn.sock, &readfds);
 			}
 
-			if (dnsService)
+			if (DNSService)
 			{
-				for (int i = 0; i < MAX_SERVERS && network.dnsUdpConn[i].ready; i++)
-					FD_SET(network.dnsUdpConn[i].sock, &readfds);
+				for (int i = 0; i < MAX_SERVERS && network.DNS_UDPConnections[i].ready; i++)
+					FD_SET(network.DNS_UDPConnections[i].sock, &readfds);
 
-				for (int i = 0; i < MAX_SERVERS && network.dnsTcpConn[i].ready; i++)
-					FD_SET(network.dnsTcpConn[i].sock, &readfds);
+				for (int i = 0; i < MAX_SERVERS && network.DNS_TCPConnections[i].ready; i++)
+					FD_SET(network.DNS_TCPConnections[i].sock, &readfds);
 
 				if (network.forwConn.ready)
 					FD_SET(network.forwConn.sock, &readfds);
@@ -333,14 +333,14 @@ void WINAPI ServiceMain(DWORD /*argc*/, TCHAR* /*argv*/[])
 
 				if (dhcpService)
 				{
-					if (network.httpConn.ready && FD_ISSET(network.httpConn.sock, &readfds))
+					if (network.HTTPConnection.ready && FD_ISSET(network.HTTPConnection.sock, &readfds))
 					{
 						data19 *req = (data19*)calloc(1, sizeof(data19));
 
 						if (req)
 						{
 							req->sockLen = sizeof(req->remote);
-							req->sock = accept(network.httpConn.sock, (sockaddr*)&req->remote, &req->sockLen);
+							req->sock = accept(network.HTTPConnection.sock, (sockaddr*)&req->remote, &req->sockLen);
 							errno = WSAGetLastError();
 
 							if (errno || req->sock == INVALID_SOCKET)
@@ -384,11 +384,11 @@ void WINAPI ServiceMain(DWORD /*argc*/, TCHAR* /*argv*/[])
 					}
 				}
 
-				if (dnsService)
+				if (DNSService)
 				{
-					for (int i = 0; i < MAX_SERVERS && network.dnsUdpConn[i].ready; i++)
+					for (int i = 0; i < MAX_SERVERS && network.DNS_UDPConnections[i].ready; i++)
 					{
-						if (FD_ISSET(network.dnsUdpConn[i].sock, &readfds))
+						if (FD_ISSET(network.DNS_UDPConnections[i].sock, &readfds))
 						{
 							if (gdnmess(&dnsr, i))
 							{
@@ -442,14 +442,14 @@ void WINAPI ServiceMain(DWORD /*argc*/, TCHAR* /*argv*/[])
 						}
 					}
 
-					for (int i = 0; i < MAX_SERVERS && network.dnsTcpConn[i].ready; i++)
+					for (int i = 0; i < MAX_SERVERS && network.DNS_TCPConnections[i].ready; i++)
 					{
-						if (FD_ISSET(network.dnsTcpConn[i].sock, &readfds))
+						if (FD_ISSET(network.DNS_TCPConnections[i].sock, &readfds))
 						{
 							dnsr.sockInd = i;
 							dnsr.sockLen = sizeof(dnsr.remote);
 							errno = 0;
-							dnsr.sock = accept(network.dnsTcpConn[i].sock, (sockaddr*)&dnsr.remote, &dnsr.sockLen);
+							dnsr.sock = accept(network.DNS_TCPConnections[i].sock, (sockaddr*)&dnsr.remote, &dnsr.sockLen);
 							errno = WSAGetLastError();
 
 							if (dnsr.sock == INVALID_SOCKET || errno)
@@ -550,23 +550,23 @@ void closeConn()
 {
     if (dhcpService)
     {
-		if (network.httpConn.ready)
-			closesocket(network.httpConn.sock);
+		if (network.HTTPConnection.ready)
+			closesocket(network.HTTPConnection.sock);
 
         for (int i = 0; i < MAX_SERVERS && network.dhcpConn[i].loaded; i++)
         	if (network.dhcpConn[i].ready)
             	closesocket(network.dhcpConn[i].sock);
     }
 
-    if (dnsService)
+    if (DNSService)
     {
-        for (int i = 0; i < MAX_SERVERS && network.dnsUdpConn[i].loaded; i++)
-        	if (network.dnsUdpConn[i].ready)
-           		closesocket(network.dnsUdpConn[i].sock);
+        for (int i = 0; i < MAX_SERVERS && network.DNS_UDPConnections[i].loaded; i++)
+        	if (network.DNS_UDPConnections[i].ready)
+           		closesocket(network.DNS_UDPConnections[i].sock);
 
-        for (int i = 0; i < MAX_SERVERS && network.dnsTcpConn[i].loaded; i++)
-        	if (network.dnsTcpConn[i].ready)
-            	closesocket(network.dnsTcpConn[i].sock);
+        for (int i = 0; i < MAX_SERVERS && network.DNS_TCPConnections[i].loaded; i++)
+        	if (network.DNS_TCPConnections[i].ready)
+            	closesocket(network.DNS_TCPConnections[i].sock);
 
         if (network.forwConn.ready)
         	closesocket(network.forwConn.sock);
@@ -578,10 +578,10 @@ void closeConn()
 {
     if (dhcpService)
     {
-		if (network.httpConn.ready)
+		if (network.HTTPConnection.ready)
 		{
-			closesocket(network.httpConn.sock);
-			sprintf(logBuff, "httpConn %s:%u closed", IP2String(ipbuff, network.httpConn.server), network.httpConn.port);
+			closesocket(network.HTTPConnection.sock);
+			sprintf(logBuff, "HTTPConnection %s:%u closed", IP2String(ipbuff, network.HTTPConnection.server), network.HTTPConnection.port);
 			logMess(logBuff, 1);
 		}
 
@@ -594,21 +594,21 @@ void closeConn()
 			}
     }
 
-    if (dnsService)
+    if (DNSService)
     {
-        for (int i = 0; i < MAX_SERVERS && network.dnsUdpConn[i].loaded; i++)
-        	if (network.dnsUdpConn[i].ready)
+        for (int i = 0; i < MAX_SERVERS && network.DNS_UDPConnections[i].loaded; i++)
+        	if (network.DNS_UDPConnections[i].ready)
         	{
-           		closesocket(network.dnsUdpConn[i].sock);
-				sprintf(logBuff, "dnsUdpConn %s:%u closed", IP2String(ipbuff, network.dnsUdpConn[i].server), network.dnsUdpConn[i].port);
+           		closesocket(network.DNS_UDPConnections[i].sock);
+				sprintf(logBuff, "DNS_UDPConnections %s:%u closed", IP2String(ipbuff, network.DNS_UDPConnections[i].server), network.DNS_UDPConnections[i].port);
 				logMess(logBuff, 1);
 			}
 
-        for (int i = 0; i < MAX_SERVERS && network.dnsTcpConn[i].loaded; i++)
-        	if (network.dnsTcpConn[i].ready)
+        for (int i = 0; i < MAX_SERVERS && network.DNS_TCPConnections[i].loaded; i++)
+        	if (network.DNS_TCPConnections[i].ready)
         	{
-            	closesocket(network.dnsTcpConn[i].sock);
-				sprintf(logBuff, "dnsTcpConn %s:%u closed", IP2String(ipbuff, network.dnsTcpConn[i].server), network.dnsTcpConn[i].port);
+            	closesocket(network.DNS_TCPConnections[i].sock);
+				sprintf(logBuff, "DNS_TCPConnections %s:%u closed", IP2String(ipbuff, network.DNS_TCPConnections[i].server), network.DNS_TCPConnections[i].port);
 				logMess(logBuff, 1);
 			}
 
@@ -826,7 +826,7 @@ void runProg()
 			continue;
 		}
 
-		if (!network.dhcpConn[0].ready && !network.dnsUdpConn[0].ready)
+		if (!network.dhcpConn[0].ready && !network.DNS_UDPConnections[0].ready)
 		{
 			Sleep(1000);
 			network.busy = false;
@@ -837,8 +837,8 @@ void runProg()
 
 		if (dhcpService)
 		{
-			if (network.httpConn.ready)
-				FD_SET(network.httpConn.sock, &readfds);
+			if (network.HTTPConnection.ready)
+				FD_SET(network.HTTPConnection.sock, &readfds);
 
 			for (int i = 0; i < MAX_SERVERS && network.dhcpConn[i].ready; i++)
 				FD_SET(network.dhcpConn[i].sock, &readfds);
@@ -847,13 +847,13 @@ void runProg()
 				FD_SET(config.dhcpReplConn.sock, &readfds);
 		}
 
-		if (dnsService)
+		if (DNSService)
 		{
-			for (int i = 0; i < MAX_SERVERS && network.dnsUdpConn[i].ready; i++)
-				FD_SET(network.dnsUdpConn[i].sock, &readfds);
+			for (int i = 0; i < MAX_SERVERS && network.DNS_UDPConnections[i].ready; i++)
+				FD_SET(network.DNS_UDPConnections[i].sock, &readfds);
 
-			for (int i = 0; i < MAX_SERVERS && network.dnsTcpConn[i].ready; i++)
-				FD_SET(network.dnsTcpConn[i].sock, &readfds);
+			for (int i = 0; i < MAX_SERVERS && network.DNS_TCPConnections[i].ready; i++)
+				FD_SET(network.DNS_TCPConnections[i].sock, &readfds);
 
 			if (network.forwConn.ready)
 				FD_SET(network.forwConn.sock, &readfds);
@@ -865,14 +865,14 @@ void runProg()
 
 			if (dhcpService)
 			{
-				if (network.httpConn.ready && FD_ISSET(network.httpConn.sock, &readfds))
+				if (network.HTTPConnection.ready && FD_ISSET(network.HTTPConnection.sock, &readfds))
 				{
 					data19 *req = (data19*)calloc(1, sizeof(data19));
 
 					if (req)
 					{
 						req->sockLen = sizeof(req->remote);
-						req->sock = accept(network.httpConn.sock, (sockaddr*)&req->remote, &req->sockLen);
+						req->sock = accept(network.HTTPConnection.sock, (sockaddr*)&req->remote, &req->sockLen);
 						errno = WSAGetLastError();
 
 						if (errno || req->sock == INVALID_SOCKET)
@@ -916,11 +916,11 @@ void runProg()
 				}
 			}
 
-			if (dnsService)
+			if (DNSService)
 			{
-				for (int i = 0; i < MAX_SERVERS && network.dnsUdpConn[i].ready; i++)
+				for (int i = 0; i < MAX_SERVERS && network.DNS_UDPConnections[i].ready; i++)
 				{
-					if (FD_ISSET(network.dnsUdpConn[i].sock, &readfds))
+					if (FD_ISSET(network.DNS_UDPConnections[i].sock, &readfds))
 					{
 						if (gdnmess(&dnsr, i))
 						{
@@ -974,14 +974,14 @@ void runProg()
 					}
 				}
 
-				for (int i = 0; i < MAX_SERVERS && network.dnsTcpConn[i].ready; i++)
+				for (int i = 0; i < MAX_SERVERS && network.DNS_TCPConnections[i].ready; i++)
 				{
-					if (FD_ISSET(network.dnsTcpConn[i].sock, &readfds))
+					if (FD_ISSET(network.DNS_TCPConnections[i].sock, &readfds))
 					{
 						dnsr.sockInd = i;
 						dnsr.sockLen = sizeof(dnsr.remote);
 						errno = 0;
-						dnsr.sock = accept(network.dnsTcpConn[i].sock, (sockaddr*)&dnsr.remote, &dnsr.sockLen);
+						dnsr.sock = accept(network.DNS_TCPConnections[i].sock, (sockaddr*)&dnsr.remote, &dnsr.sockLen);
 						errno = WSAGetLastError();
 
 						if (dnsr.sock == INVALID_SOCKET || errno)
@@ -1254,7 +1254,7 @@ void addRRError(data5 *req, _Byte rcode)
 
 void addRRNone(data5 *req)
 {
-	if (network.dns[0])
+	if (network.DNS[0])
 		req->dnsp->header.recursionAvailable = 1;
 	else
 		req->dnsp->header.recursionAvailable = 0;
@@ -1523,7 +1523,7 @@ void addRRServerA(data5 *req)
 			if (strcasecmp(cache->name, req->mapname))
 				break;
 
-			if (cache->ip && cache->ip == network.dnsUdpConn[req->sockInd].server)
+			if (cache->ip && cache->ip == network.DNS_UDPConnections[req->sockInd].server)
 			{
 				req->dnsp->header.answersCount = htons(htons(req->dnsp->header.answersCount) + 1);
 				req->dp += pQu(req->dp, req->cname);
@@ -1543,7 +1543,7 @@ void addRRServerA(data5 *req)
 			if (strcasecmp(cache->name, req->mapname))
 				break;
 
-			if (cache->ip && cache->ip != network.dnsUdpConn[req->sockInd].server)
+			if (cache->ip && cache->ip != network.DNS_UDPConnections[req->sockInd].server)
 			{
 				req->dnsp->header.answersCount = htons(htons(req->dnsp->header.answersCount) + 1);
 				req->dp += pQu(req->dp, req->cname);
@@ -2741,7 +2741,7 @@ _Word gdnmess(data5 *req, _Byte sockInd)
 	req->sockLen = sizeof(req->remote);
 	errno = 0;
 
-	req->bytes = recvfrom(network.dnsUdpConn[sockInd].sock,
+	req->bytes = recvfrom(network.DNS_UDPConnections[sockInd].sock,
 	                      req->raw,
 	                      sizeof(req->raw),
 	                      0,
@@ -3194,13 +3194,13 @@ _Word fdnmess(data5 *req)
 
 		if (req->qType == QTYPE_CHILDZONE)
 		{
-			if (queue && config.dnsRoutes[zoneDNS].dns[1])
+			if (queue && config.dnsRoutes[zoneDNS].DNS[1])
 				config.dnsRoutes[zoneDNS].currentDNS = 1 - config.dnsRoutes[zoneDNS].currentDNS;
 
-			if (req->remote.sin_addr.s_addr != config.dnsRoutes[zoneDNS].dns[config.dnsRoutes[zoneDNS].currentDNS])
+			if (req->remote.sin_addr.s_addr != config.dnsRoutes[zoneDNS].DNS[config.dnsRoutes[zoneDNS].currentDNS])
 			{
 				req->addr.sin_family = AF_INET;
-				req->addr.sin_addr.s_addr = config.dnsRoutes[zoneDNS].dns[config.dnsRoutes[zoneDNS].currentDNS];
+				req->addr.sin_addr.s_addr = config.dnsRoutes[zoneDNS].DNS[config.dnsRoutes[zoneDNS].currentDNS];
 				req->addr.sin_port = htons(IPPORT_DNS);
 				errno = 0;
 
@@ -3223,7 +3223,7 @@ _Word fdnmess(data5 *req)
 						req->dnsp->header.responseCode = RCODE_SERVERFAIL;
 					}
 
-					if (config.dnsRoutes[zoneDNS].dns[1])
+					if (config.dnsRoutes[zoneDNS].DNS[1])
 						config.dnsRoutes[zoneDNS].currentDNS = 1 - config.dnsRoutes[zoneDNS].currentDNS;
 
 					return 0;
@@ -3232,7 +3232,7 @@ _Word fdnmess(data5 *req)
 				{
 					if (verbatim || config.dnsLogLevel >= 2)
 					{
-						sprintf(logBuff, "%s forwarded to Conditional Forwarder %s", strquery(req), IP2String(ipbuff, config.dnsRoutes[zoneDNS].dns[config.dnsRoutes[zoneDNS].currentDNS]));
+						sprintf(logBuff, "%s forwarded to Conditional Forwarder %s", strquery(req), IP2String(ipbuff, config.dnsRoutes[zoneDNS].DNS[config.dnsRoutes[zoneDNS].currentDNS]));
 						logDNSMess(req, logBuff, 2);
 					}
 				}
@@ -3282,7 +3282,7 @@ _Word fdnmess(data5 *req)
 			return 0;
 		}
 
-		if (!network.dns[0])
+		if (!network.DNS[0])
 		{
 			addRRNone(req);
 			req->dnsp->header.recursionAvailable = 0;
@@ -3294,18 +3294,18 @@ _Word fdnmess(data5 *req)
 			return 0;
 		}
 
-		if (queue && network.dns[1] && queue->dnsIndex < MAX_SERVERS && network.currentDNS == queue->dnsIndex)
+		if (queue && network.DNS[1] && queue->dnsIndex < MAX_SERVERS && network.currentDNS == queue->dnsIndex)
 		{
 			network.currentDNS++;
 
-			if (network.currentDNS >= MAX_SERVERS || !network.dns[network.currentDNS])
+			if (network.currentDNS >= MAX_SERVERS || !network.DNS[network.currentDNS])
 				network.currentDNS = 0;
 		}
 
-		if (req->remote.sin_addr.s_addr != network.dns[network.currentDNS])
+		if (req->remote.sin_addr.s_addr != network.DNS[network.currentDNS])
 		{
 			req->addr.sin_family = AF_INET;
-			req->addr.sin_addr.s_addr = network.dns[network.currentDNS];
+			req->addr.sin_addr.s_addr = network.DNS[network.currentDNS];
 			req->addr.sin_port = htons(IPPORT_DNS);
 			errno = 0;
 
@@ -3322,17 +3322,17 @@ _Word fdnmess(data5 *req)
 			{
 				if (verbatim || config.dnsLogLevel)
 				{
-					sprintf(logBuff, "Error forwarding UDP DNS Message to Forwarding Server %s", IP2String(ipbuff, network.dns[network.currentDNS]));
+					sprintf(logBuff, "Error forwarding UDP DNS Message to Forwarding Server %s", IP2String(ipbuff, network.DNS[network.currentDNS]));
 					logDNSMess(req, logBuff, 1);
 					addRRNone(req);
 					req->dnsp->header.responseCode = RCODE_SERVERFAIL;
 				}
 
-				if (network.dns[1])
+				if (network.DNS[1])
 				{
 					network.currentDNS++;
 
-					if (network.currentDNS >= MAX_SERVERS || !network.dns[network.currentDNS])
+					if (network.currentDNS >= MAX_SERVERS || !network.DNS[network.currentDNS])
 						network.currentDNS = 0;
 				}
 
@@ -3342,7 +3342,7 @@ _Word fdnmess(data5 *req)
 			{
 				if (verbatim || config.dnsLogLevel >= 2)
 				{
-					sprintf(logBuff, "%s forwarded to Forwarding Server %s", strquery(req), IP2String(ipbuff, network.dns[network.currentDNS]));
+					sprintf(logBuff, "%s forwarded to Forwarding Server %s", strquery(req), IP2String(ipbuff, network.DNS[network.currentDNS]));
 					logDNSMess(req, logBuff, 2);
 				}
 			}
@@ -3496,11 +3496,11 @@ _Word frdnmess(data5 *req)
 
 		if (queue->dnsIndex < MAX_SERVERS)
 		{
-			if (req->remote.sin_addr.s_addr != network.dns[network.currentDNS])
+			if (req->remote.sin_addr.s_addr != network.DNS[network.currentDNS])
 			{
-				for (_Byte i = 0; i < MAX_SERVERS && network.dns[i]; i++)
+				for (_Byte i = 0; i < MAX_SERVERS && network.DNS[i]; i++)
 				{
-					if (network.dns[i] == req->remote.sin_addr.s_addr)
+					if (network.DNS[i] == req->remote.sin_addr.s_addr)
 					{
 						network.currentDNS = i;
 						break;
@@ -3537,7 +3537,7 @@ _Word sdnmess(data5 *req)
 
 	errno = 0;
 	req->bytes = req->dp - req->raw;
-	req->bytes = sendto(network.dnsUdpConn[req->sockInd].sock,
+	req->bytes = sendto(network.DNS_UDPConnections[req->sockInd].sock,
 	                    req->raw,
 	                    req->bytes,
 	                    0,
@@ -3971,7 +3971,7 @@ _DWord resad(data9 *req)
 		}
 	}
 
-	if (dnsService && req->hostname[0])
+	if (DNSService && req->hostname[0])
 	{
 		char hostname[128];
 		strcpy(hostname, req->hostname);
@@ -4257,7 +4257,7 @@ _DWord sdmess(data9 *req)
 			setLeaseExpiry(req->dhcpEntry, 0);
 			_beginthread(updateStateFile, 0, (void*)req->dhcpEntry);
 
-			if (dnsService && config.replication != 2)
+			if (DNSService && config.replication != 2)
 				expireEntry(req->dhcpEntry->ip);
 
 			if (verbatim || config.dhcpLogLevel)
@@ -4430,7 +4430,7 @@ _DWord alad(data9 *req)
 
 		_beginthread(updateStateFile, 0, (void*)req->dhcpEntry);
 
-		if (dnsService && config.replication != 2)
+		if (DNSService && config.replication != 2)
 			updateDNS(req);
 
 		if (verbatim || config.dhcpLogLevel >= 1)
@@ -4608,7 +4608,7 @@ void addOptions(data9 *req)
 */
 			if (!req->opAdded[DHCP_OPTION_DNS])
 			{
-				if (dnsService)
+				if (DNSService)
 				{
 					op.opt_code = DHCP_OPTION_DNS;
 
@@ -5112,7 +5112,7 @@ void recvRepl(data9 *req)
 
 		_beginthread(updateStateFile, 0, (void*)req->dhcpEntry);
 
-		if (dnsService && config.replication != 2)
+		if (DNSService && config.replication != 2)
 		{
 			if (req->lease)
 				updateDNS(req);
@@ -6292,7 +6292,7 @@ void loadDHCP()
 
 					setLeaseExpiry(dhcpEntry);
 
-					if (dnsService && dhcpData.hostname[0] && config.replication != 2 && dhcpData.expiry > t)
+					if (DNSService && dhcpData.hostname[0] && config.replication != 2 && dhcpData.expiry > t)
 					{
 						if (isLocal(dhcpEntry->ip))
 							add2Cache(dhcpData.hostname, dhcpEntry->ip, dhcpData.expiry, CTYPE_LOCAL_A, CTYPE_LOCAL_PTR_AUTH);
@@ -7323,11 +7323,11 @@ void checkSize()
 				{
 					if (network.currentDNS == cache->dnsIndex)
 					{
-						if (network.dns[1])
+						if (network.DNS[1])
 						{
 							network.currentDNS++;
 
-							if (network.currentDNS >= MAX_SERVERS || !network.dns[network.currentDNS])
+							if (network.currentDNS >= MAX_SERVERS || !network.DNS[network.currentDNS])
 								network.currentDNS = 0;
 						}
 					}
@@ -8595,11 +8595,11 @@ void __cdecl init(void *lpParam)
 	if (f = openSection("SERVICES", 1))
 	{
 		dhcpService = false;
-		dnsService = false;
+		DNSService = false;
 
 		while(readSection(raw, f))
 			if (!strcasecmp(raw, "DNS"))
-				dnsService = true;
+				DNSService = true;
 			else if (!strcasecmp(raw, "DHCP"))
 				dhcpService = true;
 			else
@@ -8608,14 +8608,14 @@ void __cdecl init(void *lpParam)
 				logMess(logBuff, 1);
 			}
 
-		if (!dhcpService && !dnsService)
+		if (!dhcpService && !DNSService)
 		{
 			dhcpService = true;
-			dnsService = true;
+			DNSService = true;
 		}
 	}
 
-	if (dnsService)
+	if (DNSService)
 	{
 		sprintf(logBuff, "Starting DNS Service");
 		logDNSMess(logBuff, 1);
@@ -8644,7 +8644,7 @@ void __cdecl init(void *lpParam)
 		logDHCPMess(logBuff, 1);
 	}
 
-	if (dnsService)
+	if (DNSService)
 	{
 		if (config.dnsLogLevel == 3)
 			sprintf(logBuff, "DNS Logging: All");
@@ -8859,7 +8859,7 @@ void __cdecl init(void *lpParam)
 		{
 			if(i < MAX_TCP_CLIENTS)
 			{
-				if (dnsService && !config.authorized)
+				if (DNSService && !config.authorized)
 				{
 					sprintf(logBuff, "Section [ZONE_REPLICATION], Server is not an authority, entry %s ignored", raw);
 					logDNSMess(logBuff, 1);
@@ -8876,7 +8876,7 @@ void __cdecl init(void *lpParam)
 							config.zoneServers[0] = inet_addr(value);
 						else if (!strcasecmp(name, "Secondary"))
 							config.zoneServers[1] = inet_addr(value);
-						else if (dnsService && !strcasecmp(name, "AXFRClient"))
+						else if (DNSService && !strcasecmp(name, "AXFRClient"))
 						{
 							config.zoneServers[i] = inet_addr(value);
 							i++;
@@ -8990,7 +8990,7 @@ void __cdecl init(void *lpParam)
 		}
 	}
 
-	if (dnsService)
+	if (DNSService)
 	{
 		if (f = openSection("DNS_ALLOWED_HOSTS", 1))
 		{
@@ -9254,8 +9254,8 @@ void __cdecl init(void *lpParam)
 									{
 										strcpy(config.dnsRoutes[i].zone, name);
 										config.dnsRoutes[i].zLen = strlen(config.dnsRoutes[i].zone);
-										config.dnsRoutes[i].dns[0] = ip;
-										config.dnsRoutes[i].dns[1] = ip1;
+										config.dnsRoutes[i].DNS[0] = ip;
+										config.dnsRoutes[i].DNS[1] = ip1;
 										i++;
 									}
 									else
@@ -9272,7 +9272,7 @@ void __cdecl init(void *lpParam)
 									{
 										strcpy(config.dnsRoutes[i].zone, name);
 										config.dnsRoutes[i].zLen = strlen(config.dnsRoutes[i].zone);
-										config.dnsRoutes[i].dns[0] = ip;
+										config.dnsRoutes[i].DNS[0] = ip;
 										i++;
 									}
 									else
@@ -9525,7 +9525,7 @@ void __cdecl init(void *lpParam)
 					op.value[0] = DHCP_MESS_INFORM;
 					pvdata(&token, &op);
 
-					if (dnsService)
+					if (DNSService)
 					{
 						op.opt_code = DHCP_OPTION_DNS;
 						op.size = 4;
@@ -9570,7 +9570,7 @@ void __cdecl init(void *lpParam)
 
 	logDNSMess(logBuff, 1);
 
-	if (dnsService)
+	if (DNSService)
 	{
 		if (config.authorized)
 			sprintf(logBuff, "Authority for Zone: %s (%s)", config.zone, config.authority);
@@ -9603,21 +9603,21 @@ void __cdecl init(void *lpParam)
 			logDNSMess(logBuff, 1);
 		}
 
-		for (int i = 0; i < MAX_COND_FORW && config.dnsRoutes[i].dns[0]; i++)
+		for (int i = 0; i < MAX_COND_FORW && config.dnsRoutes[i].DNS[0]; i++)
 		{
 			char temp[256];
 
-			if (!config.dnsRoutes[i].dns[1])
-				sprintf(logBuff, "Conditional Forwarder: %s for %s", IP2String(ipbuff, config.dnsRoutes[i].dns[0]), config.dnsRoutes[i].zone);
+			if (!config.dnsRoutes[i].DNS[1])
+				sprintf(logBuff, "Conditional Forwarder: %s for %s", IP2String(ipbuff, config.dnsRoutes[i].DNS[0]), config.dnsRoutes[i].zone);
 			else
-				sprintf(logBuff, "Conditional Forwarder: %s, %s for %s", IP2String(temp, config.dnsRoutes[i].dns[0]), IP2String(ipbuff, config.dnsRoutes[i].dns[1]), config.dnsRoutes[i].zone);
+				sprintf(logBuff, "Conditional Forwarder: %s, %s for %s", IP2String(temp, config.dnsRoutes[i].DNS[0]), IP2String(ipbuff, config.dnsRoutes[i].DNS[1]), config.dnsRoutes[i].zone);
 
 			logDNSMess(logBuff, 1);
 		}
 
-		for (int i = 0; i < MAX_SERVERS && network.dns[i]; i++)
+		for (int i = 0; i < MAX_SERVERS && network.DNS[i]; i++)
 		{
-			sprintf(logBuff, "Default Forwarding Server: %s", IP2String(ipbuff, network.dns[i]));
+			sprintf(logBuff, "Default Forwarding Server: %s", IP2String(ipbuff, network.DNS[i]));
 			logDNSMess(logBuff, 1);
 		}
 
@@ -9704,8 +9704,8 @@ void __cdecl init(void *lpParam)
 				i++;
 			}
 
-			network.httpConn.port = 6789;
-			network.httpConn.server = inet_addr("127.0.0.1");
+			network.HTTPConnection.port = 6789;
+			network.HTTPConnection.server = inet_addr("127.0.0.1");
 
 			if (f = openSection("HTTP_INTERFACE", 1))
 			{
@@ -9719,11 +9719,11 @@ void __cdecl init(void *lpParam)
 
 						if (isIP(name))
 						{
-							network.httpConn.server = inet_addr(name);
+							network.HTTPConnection.server = inet_addr(name);
 						}
 						else
 						{
-							network.httpConn.loaded = false;
+							network.HTTPConnection.loaded = false;
 							sprintf(logBuff, "Warning: Section [HTTP_INTERFACE], Invalid IP Address %s, ignored", name);
 							logDHCPMess(logBuff, 1);
 						}
@@ -9731,19 +9731,19 @@ void __cdecl init(void *lpParam)
 						if (value[0])
 						{
 							if (atoi(value))
-								network.httpConn.port = atoi(value);
+								network.HTTPConnection.port = atoi(value);
 							else
 							{
-								network.httpConn.loaded = false;
+								network.HTTPConnection.loaded = false;
 								sprintf(logBuff, "Warning: Section [HTTP_INTERFACE], Invalid port %s, ignored", value);
 								logDHCPMess(logBuff, 1);
 							}
 						}
 
-						if (network.httpConn.server != inet_addr("127.0.0.1") && !findServer(network.allServers, MAX_SERVERS, network.httpConn.server))
+						if (network.HTTPConnection.server != inet_addr("127.0.0.1") && !findServer(network.allServers, MAX_SERVERS, network.HTTPConnection.server))
 						{
 							bindfailed = true;
-							network.httpConn.loaded = false;
+							network.HTTPConnection.loaded = false;
 							sprintf(logBuff, "Warning: Section [HTTP_INTERFACE], %s not available, ignored", raw);
 							logDHCPMess(logBuff, 1);
 						}
@@ -9774,9 +9774,9 @@ void __cdecl init(void *lpParam)
 			if (!htmlTitle[0])
 				sprintf(htmlTitle, "Dual Server on %s", config.servername);
 
-			network.httpConn.sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+			network.HTTPConnection.sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 
-			if (network.httpConn.sock == INVALID_SOCKET)
+			if (network.HTTPConnection.sock == INVALID_SOCKET)
 			{
 				bindfailed = true;
 				sprintf(logBuff, "Failed to Create Socket");
@@ -9784,53 +9784,53 @@ void __cdecl init(void *lpParam)
 			}
 			else
 			{
-				//printf("Socket %u\n", network.httpConn.sock);
+				//printf("Socket %u\n", network.HTTPConnection.sock);
 
-				network.httpConn.addr.sin_family = AF_INET;
-				network.httpConn.addr.sin_addr.s_addr = network.httpConn.server;
-				network.httpConn.addr.sin_port = htons(network.httpConn.port);
+				network.HTTPConnection.addr.sin_family = AF_INET;
+				network.HTTPConnection.addr.sin_addr.s_addr = network.HTTPConnection.server;
+				network.HTTPConnection.addr.sin_port = htons(network.HTTPConnection.port);
 
-				int nRet = bind(network.httpConn.sock, (sockaddr*)&network.httpConn.addr, sizeof(struct sockaddr_in));
+				int nRet = bind(network.HTTPConnection.sock, (sockaddr*)&network.HTTPConnection.addr, sizeof(struct sockaddr_in));
 
 				if (nRet == SOCKET_ERROR)
 				{
 					bindfailed = true;
-					sprintf(logBuff, "Http Interface %s TCP Port %u not available", IP2String(ipbuff, network.httpConn.server), network.httpConn.port);
+					sprintf(logBuff, "Http Interface %s TCP Port %u not available", IP2String(ipbuff, network.HTTPConnection.server), network.HTTPConnection.port);
 					logDHCPMess(logBuff, 1);
-					closesocket(network.httpConn.sock);
+					closesocket(network.HTTPConnection.sock);
 				}
 				else
 				{
-					nRet = listen(network.httpConn.sock, SOMAXCONN);
+					nRet = listen(network.HTTPConnection.sock, SOMAXCONN);
 
 					if (nRet == SOCKET_ERROR)
 					{
 						bindfailed = true;
-						sprintf(logBuff, "%s TCP Port %u Error on Listen", IP2String(ipbuff, network.httpConn.server), network.httpConn.port);
+						sprintf(logBuff, "%s TCP Port %u Error on Listen", IP2String(ipbuff, network.HTTPConnection.server), network.HTTPConnection.port);
 						logDHCPMess(logBuff, 1);
-						closesocket(network.httpConn.sock);
+						closesocket(network.HTTPConnection.sock);
 					}
 					else
 					{
-						network.httpConn.loaded = true;
-						network.httpConn.ready = true;
+						network.HTTPConnection.loaded = true;
+						network.HTTPConnection.ready = true;
 
-						if (network.httpConn.sock > network.maxFD)
-							network.maxFD = network.httpConn.sock;
+						if (network.HTTPConnection.sock > network.maxFD)
+							network.maxFD = network.HTTPConnection.sock;
 					}
 				}
 			}
 		}
 
-		if (dnsService)
+		if (DNSService)
 		{
 			int i = 0;
 
 			for (int j = 0; j < MAX_SERVERS && network.listenServers[j]; j++)
 			{
-				network.dnsUdpConn[i].sock = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
+				network.DNS_UDPConnections[i].sock = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
 
-				if (network.dnsUdpConn[i].sock == INVALID_SOCKET)
+				if (network.DNS_UDPConnections[i].sock == INVALID_SOCKET)
 				{
 					bindfailed = true;
 					sprintf(logBuff, "Failed to Create Socket");
@@ -9838,34 +9838,34 @@ void __cdecl init(void *lpParam)
 					continue;
 				}
 
-				//printf("Socket %u\n", network.dnsUdpConn[i].sock);
+				//printf("Socket %u\n", network.DNS_UDPConnections[i].sock);
 
-				network.dnsUdpConn[i].addr.sin_family = AF_INET;
-				network.dnsUdpConn[i].addr.sin_addr.s_addr = network.listenServers[j];
-				network.dnsUdpConn[i].addr.sin_port = htons(IPPORT_DNS);
+				network.DNS_UDPConnections[i].addr.sin_family = AF_INET;
+				network.DNS_UDPConnections[i].addr.sin_addr.s_addr = network.listenServers[j];
+				network.DNS_UDPConnections[i].addr.sin_port = htons(IPPORT_DNS);
 
-				int nRet = bind(network.dnsUdpConn[i].sock,
-								(sockaddr*)&network.dnsUdpConn[i].addr,
+				int nRet = bind(network.DNS_UDPConnections[i].sock,
+								(sockaddr*)&network.DNS_UDPConnections[i].addr,
 								sizeof(struct sockaddr_in)
 							   );
 
 				if (nRet == SOCKET_ERROR)
 				{
 					bindfailed = true;
-					closesocket(network.dnsUdpConn[i].sock);
+					closesocket(network.DNS_UDPConnections[i].sock);
 					sprintf(logBuff, "Warning: %s UDP Port 53 already in use", IP2String(ipbuff, network.listenServers[j]));
 					logDNSMess(logBuff, 1);
 					continue;
 				}
 
-				network.dnsUdpConn[i].loaded = true;
-				network.dnsUdpConn[i].ready = true;
+				network.DNS_UDPConnections[i].loaded = true;
+				network.DNS_UDPConnections[i].ready = true;
 
-				if (network.maxFD < network.dnsUdpConn[i].sock)
-					network.maxFD = network.dnsUdpConn[i].sock;
+				if (network.maxFD < network.DNS_UDPConnections[i].sock)
+					network.maxFD = network.DNS_UDPConnections[i].sock;
 
-				network.dnsUdpConn[i].server = network.listenServers[j];
-				network.dnsUdpConn[i].port = IPPORT_DNS;
+				network.DNS_UDPConnections[i].server = network.listenServers[j];
+				network.DNS_UDPConnections[i].port = IPPORT_DNS;
 
 				i++;
 			}
@@ -9881,7 +9881,7 @@ void __cdecl init(void *lpParam)
 			else
 			{
 				network.forwConn.addr.sin_family = AF_INET;
-				network.forwConn.server = network.dns[0];
+				network.forwConn.server = network.DNS[0];
 				network.forwConn.port = IPPORT_DNS;
 				//bind(network.forwConn.sock, (sockaddr*)&network.forwConn.addr, sizeof(struct sockaddr_in));
 
@@ -9896,9 +9896,9 @@ void __cdecl init(void *lpParam)
 
 			for (int j = 0; j < MAX_SERVERS && network.listenServers[j]; j++)
 			{
-				network.dnsTcpConn[i].sock = socket( PF_INET, SOCK_STREAM, IPPROTO_TCP);
+				network.DNS_TCPConnections[i].sock = socket( PF_INET, SOCK_STREAM, IPPROTO_TCP);
 
-				if (network.dnsTcpConn[i].sock == INVALID_SOCKET)
+				if (network.DNS_TCPConnections[i].sock == INVALID_SOCKET)
 				{
 					bindfailed = true;
 					sprintf(logBuff, "Failed to Create Socket");
@@ -9906,42 +9906,42 @@ void __cdecl init(void *lpParam)
 				}
 				else
 				{
-					//printf("Socket %u\n", network.dnsTcpConn[i].sock);
-					network.dnsTcpConn[i].addr.sin_family = AF_INET;
-					network.dnsTcpConn[i].addr.sin_addr.s_addr = network.listenServers[j];
-					network.dnsTcpConn[i].addr.sin_port = htons(IPPORT_DNS);
+					//printf("Socket %u\n", network.DNS_TCPConnections[i].sock);
+					network.DNS_TCPConnections[i].addr.sin_family = AF_INET;
+					network.DNS_TCPConnections[i].addr.sin_addr.s_addr = network.listenServers[j];
+					network.DNS_TCPConnections[i].addr.sin_port = htons(IPPORT_DNS);
 
-					int nRet = bind(network.dnsTcpConn[i].sock,
-									(sockaddr*)&network.dnsTcpConn[i].addr,
+					int nRet = bind(network.DNS_TCPConnections[i].sock,
+									(sockaddr*)&network.DNS_TCPConnections[i].addr,
 									sizeof(struct sockaddr_in));
 
 					if (nRet == SOCKET_ERROR)
 					{
 						bindfailed = true;
-						closesocket(network.dnsTcpConn[i].sock);
+						closesocket(network.DNS_TCPConnections[i].sock);
 						sprintf(logBuff, "Warning: %s TCP Port 53 already in use", IP2String(ipbuff, network.listenServers[j]));
 						logDNSMess(logBuff, 1);
 					}
 					else
 					{
-						nRet = listen(network.dnsTcpConn[i].sock, SOMAXCONN);
+						nRet = listen(network.DNS_TCPConnections[i].sock, SOMAXCONN);
 
 						if (nRet == SOCKET_ERROR)
 						{
-							closesocket(network.dnsTcpConn[i].sock);
+							closesocket(network.DNS_TCPConnections[i].sock);
 							sprintf(logBuff, "TCP Port 53 Error on Listen");
 							logDNSMess(logBuff, 1);
 						}
 						else
 						{
-							network.dnsTcpConn[i].server = network.listenServers[j];
-							network.dnsTcpConn[i].port = IPPORT_DNS;
+							network.DNS_TCPConnections[i].server = network.listenServers[j];
+							network.DNS_TCPConnections[i].port = IPPORT_DNS;
 
-							network.dnsTcpConn[i].loaded = true;
-							network.dnsTcpConn[i].ready = true;
+							network.DNS_TCPConnections[i].loaded = true;
+							network.DNS_TCPConnections[i].ready = true;
 
-							if (network.maxFD < network.dnsTcpConn[i].sock)
-								network.maxFD = network.dnsTcpConn[i].sock;
+							if (network.maxFD < network.DNS_TCPConnections[i].sock)
+								network.maxFD = network.DNS_TCPConnections[i].sock;
 
 							i++;
 						}
@@ -9957,8 +9957,8 @@ void __cdecl init(void *lpParam)
 			for (_Byte m = 0; m < MAX_SERVERS && network.allServers[m]; m++)
 				lockIP(network.allServers[m]);
 
-			for (_Byte m = 0; m < MAX_SERVERS && network.dns[m]; m++)
-				lockIP(network.dns[m]);
+			for (_Byte m = 0; m < MAX_SERVERS && network.DNS[m]; m++)
+				lockIP(network.DNS[m]);
 		}
 
 		if (bindfailed)
@@ -9966,24 +9966,24 @@ void __cdecl init(void *lpParam)
 		else
 			config.failureCount = 0;
 
-		//printf("%i %i %i\n", network.dhcpConn[0].ready, network.dnsUdpConn[0].ready, network.dnsTcpConn[0].ready);
+		//printf("%i %i %i\n", network.dhcpConn[0].ready, network.DNS_UDPConnections[0].ready, network.DNS_TCPConnections[0].ready);
 
-		if ((dhcpService && !network.dhcpConn[0].ready) || (dnsService && !(network.dnsUdpConn[0].ready && network.dnsTcpConn[0].ready)))
+		if ((dhcpService && !network.dhcpConn[0].ready) || (DNSService && !(network.DNS_UDPConnections[0].ready && network.DNS_TCPConnections[0].ready)))
 		{
 			sprintf(logBuff, "No Static Interface ready, Waiting...");
 			logMess(logBuff, 1);
 			continue;
 		}
 
-		if (dhcpService && network.httpConn.ready)
+		if (dhcpService && network.HTTPConnection.ready)
 		{
-			sprintf(logBuff, "Lease Status URL: http://%s:%u", IP2String(ipbuff, network.httpConn.server), network.httpConn.port);
+			sprintf(logBuff, "Lease Status URL: http://%s:%u", IP2String(ipbuff, network.HTTPConnection.server), network.HTTPConnection.port);
 			logDHCPMess(logBuff, 1);
 			FILE *f = fopen(htmFile, "wt");
 
 			if (f)
 			{
-				fprintf(f, "<html><head><meta http-equiv=\"refresh\" content=\"0;url=http://%s:%u\"</head></html>", IP2String(ipbuff, network.httpConn.server), network.httpConn.port);
+				fprintf(f, "<html><head><meta http-equiv=\"refresh\" content=\"0;url=http://%s:%u\"</head></html>", IP2String(ipbuff, network.HTTPConnection.server), network.HTTPConnection.port);
 				fclose(f);
 			}
 		}
@@ -10002,7 +10002,7 @@ void __cdecl init(void *lpParam)
 		{
 			for (_Byte j = 0; j < MAX_SERVERS; j++)
 			{
-				if (network.dhcpConn[j].server == network.staticServers[i] || network.dnsUdpConn[j].server == network.staticServers[i])
+				if (network.dhcpConn[j].server == network.staticServers[i] || network.DNS_UDPConnections[j].server == network.staticServers[i])
 				{
 					sprintf(logBuff, "Listening On: %s", IP2String(ipbuff, network.staticServers[i]));
 					logMess(logBuff, 1);
@@ -10241,7 +10241,7 @@ void getInterfaces(data1 *network)
 			{
 				_DWord addr = inet_addr(pIPAddr->IpAddress.String);
 
-				if (!dnsService || !findServer(network->allServers, MAX_SERVERS, addr))
+				if (!DNSService || !findServer(network->allServers, MAX_SERVERS, addr))
 					addServer(network->dns, MAX_SERVERS, addr);
 
 				pIPAddr = pIPAddr->Next;
@@ -10252,7 +10252,7 @@ void getInterfaces(data1 *network)
 
 	for (int i = 0; i < MAX_SERVERS && config.specifiedDnsServers[i]; i++)
 	{
-		if (!dnsService || !findServer(network->allServers, MAX_SERVERS, config.specifiedDnsServers[i]))
+		if (!DNSService || !findServer(network->allServers, MAX_SERVERS, config.specifiedDnsServers[i]))
 			addServer(network->dns, MAX_SERVERS, config.specifiedDnsServers[i]);
 	}
 	return;

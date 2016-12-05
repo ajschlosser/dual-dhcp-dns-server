@@ -94,7 +94,7 @@ using namespace std;
 
 #define IPPORT_DNS 53
 
-struct dnsHeader
+struct DNSHeader
 {
 	unsigned queryID :16;	//query identification number
 	/* byte boundry */
@@ -130,7 +130,7 @@ struct dnsHeader
 };
 
 /*
-struct dnsHeader
+struct DNSHeader
 {
 	unsigned xid :16;	// query identification number
 	unsigned qr: 1;		// response flag
@@ -164,7 +164,7 @@ struct dnsHeader
 
 struct dnsPacket
 {
-	struct dnsHeader header;
+	struct DNSHeader header;
 	char data;
 };
 
@@ -172,7 +172,7 @@ struct DNSRoute
 {
 	char zone[256];
 	_Word zLen;
-	_DWord dns[2];
+	_DWord DNS[2];
 	_Byte currentDNS;
 	_Byte lastDNS;
 };
@@ -249,7 +249,7 @@ struct data71 //Lump
 typedef multimap<string, CachedData*> hostMap;
 typedef multimap<time_t, CachedData*> expiryMap;
 
-struct data5 //dns request
+struct data5 //DNS request
 {
 	dnsPacket *dnsp;
 	char *dp;
@@ -313,7 +313,7 @@ enum
 	QTYPE_CHILDZONE
 };
 
-struct data12 //dns range
+struct data12 //DNS range
 {
 	_DWord rangeStart;
 	_DWord rangeEnd;
@@ -687,7 +687,7 @@ struct data9 //dhcpRequst
 	_DWord subnetIP;
 	_DWord targetIP;
 	_DWord rebind;
-	_DWord dns;
+	_DWord DNS;
 	_Byte paramreqlist[256];
 	_Byte opAdded[256];
 	_Byte req_type;
@@ -745,16 +745,16 @@ struct data8 //client
 struct data1
 {
 	DhcpConnType dhcpConn[MAX_SERVERS];
-	ConnType dnsUdpConn[MAX_SERVERS];
+	ConnType DNS_UDPConnections[MAX_SERVERS];
 	ConnType forwConn;
-	ConnType dnsTcpConn[MAX_SERVERS];
-	ConnType httpConn;
+	ConnType DNS_TCPConnections[MAX_SERVERS];
+	ConnType HTTPConnection;
 	_DWord allServers[MAX_SERVERS];
 	_DWord listenServers[MAX_SERVERS];
 	_DWord listenMasks[MAX_SERVERS];
 	_DWord staticServers[MAX_SERVERS];
 	_DWord staticMasks[MAX_SERVERS];
-	_DWord dns[MAX_SERVERS];
+	_DWord DNS[MAX_SERVERS];
 	SOCKET maxFD;
 	_Byte currentDNS;
 	bool ready;
