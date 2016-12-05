@@ -20,9 +20,9 @@
 //This file defines all structures and constants
 //for both DHCP and DNS Servers
 
-#define MYBYTE unsigned char
-#define MYWORD unsigned short
-#define MYDWORD unsigned int
+typedef unsigned char _Byte;
+typedef unsigned short _Word;
+typedef unsigned int _DWord;
 
 #ifdef _MSC_VER
    #define strcasecmp _stricmp
@@ -42,7 +42,7 @@ using namespace std;
 #define MAX_RANGE_FILTERS 32
 #define MAX_COND_FORW 125
 #define MAX_TCP_CLIENTS 16
-#define MAX_WILD_HOSTS 125
+#define MAX_WILDCARD_HOSTS 125
 
 #define RCODE_NOERROR 		0
 #define RCODE_FORMATERROR	1
@@ -147,16 +147,16 @@ struct dnsHeader
 	// byte boundry 	// remaining bytes
 	union {
 		struct {
-			MYWORD qdcount;
-			MYWORD ancount;
-			MYWORD nscount;
-			MYWORD adcount;
+			_Word qdcount;
+			_Word ancount;
+			_Word nscount;
+			_Word adcount;
 		};
 		struct {
-			MYWORD zcount;
-			MYWORD prcount;
-			MYWORD ucount;
-			MYWORD arcount;
+			_Word zcount;
+			_Word prcount;
+			_Word ucount;
+			_Word arcount;
 		};
 	};
 };
@@ -168,24 +168,24 @@ struct dnsPacket
 	char data;
 };
 
-struct data10
+struct DNSRoute
 {
 	char zone[256];
-	MYWORD zLen;
-	MYDWORD dns[2];
-	MYBYTE currentDNS;
-	MYBYTE lastDNS;
+	_Word zLen;
+	_DWord dns[2];
+	_Byte currentDNS;
+	_Byte lastDNS;
 };
 
-struct data16
+struct WildcardHost
 {
 	char wildcard[256];
-	MYDWORD ip;
+	_DWord ip;
 };
 
 struct data18
 {
-	MYBYTE currentInd;
+	_Byte currentInd;
 	bool done;
 };
 
@@ -197,10 +197,10 @@ struct CachedData //cache
 	{
 		struct
 		{
-			MYBYTE cType;
-			MYBYTE dnsType;
-			MYBYTE sockInd;
-			MYBYTE dnsIndex;
+			_Byte cType;
+			_Byte dnsType;
+			_Byte sockInd;
+			_Byte dnsIndex;
 		};
 		struct
 		{
@@ -209,41 +209,41 @@ struct CachedData //cache
 			unsigned display: 1;
 			unsigned reserved1: 5;
 			char rangeInd;
-			MYWORD dhcpInd;
+			_Word dhcpInd;
 		};
 	};
 	union
 	{
 		char *name;
-		MYBYTE *options;
+		_Byte *options;
 	};
 	union
 	{
 		int bytes;
-		MYDWORD ip;
+		_DWord ip;
 		SOCKADDR_IN *addr;
 	};
 	union
 	{
-		MYBYTE *response;
+		_Byte *response;
 		char *hostname;
 		char *query;
 	};
-	MYBYTE data;
+	_Byte data;
 };
 
 struct data71 //Lump
 {
 	char *mapname;
-	MYBYTE *response;
+	_Byte *response;
 	char *hostname;
 	char *query;
 	SOCKADDR_IN *addr;
-	MYBYTE *options;
-	MYWORD optionSize;
+	_Byte *options;
+	_Word optionSize;
 	int bytes;
-	MYBYTE cType;
-	MYBYTE dnsType;
+	_Byte cType;
+	_Byte dnsType;
 };
 
 typedef multimap<string, CachedData*> hostMap;
@@ -266,13 +266,13 @@ struct data5 //dns request
 	socklen_t sockLen;
 	linger ling;
 	int bytes;
-	MYWORD qLen;
-	MYWORD qclass;
-	MYBYTE dnsType;
-	MYBYTE qType;
-	MYBYTE cType;
-	MYBYTE sockInd;
-	MYBYTE dnsIndex;
+	_Word qLen;
+	_Word qclass;
+	_Byte dnsType;
+	_Byte qType;
+	_Byte cType;
+	_Byte sockInd;
+	_Byte dnsIndex;
 };
 
 enum
@@ -315,16 +315,16 @@ enum
 
 struct data12 //dns range
 {
-	MYDWORD rangeStart;
-	MYDWORD rangeEnd;
+	_DWord rangeStart;
+	_DWord rangeEnd;
 };
 
 struct dns_rr
 {
 	char *name;
-	MYWORD type, _class;
-	MYDWORD ttl;
-	MYWORD rdlength;
+	_Word type, _class;
+	_DWord ttl;
+	_Word rdlength;
 	char *rdata;
 	union {
 		struct
@@ -392,7 +392,7 @@ struct dns_rr
 		struct
 		{
 			int address;
-			MYBYTE protocol;
+			_Byte protocol;
 			int bitmapsize;
 			char *bitmap;
 		} wks;
@@ -402,7 +402,7 @@ struct dns_rr
 struct data11 //mx
 {
 	char hostname[256];
-	MYWORD pref;
+	_Word pref;
 };
 
 struct ConnType
@@ -410,8 +410,8 @@ struct ConnType
 	SOCKET sock;
 	SOCKADDR_IN addr;
 	SOCKADDR_IN remote;
-	MYDWORD server;
-	MYWORD port;
+	_DWord server;
+	_Word port;
 	bool loaded;
 	bool ready;
 };
@@ -564,20 +564,20 @@ struct ConnType
 
 struct data3
 {
-	MYBYTE opt_code;
-	MYBYTE size;
-	MYBYTE value[256];
+	_Byte opt_code;
+	_Byte size;
+	_Byte value[256];
 };
 
 typedef map<string, CachedData*> dhcpMap;
 
 struct dhcp_header
 {
-	MYBYTE bp_op;
-	MYBYTE bp_htype;
-	MYBYTE bp_hlen;
-	MYBYTE bp_hops;
-	MYDWORD bp_xid;
+	_Byte bp_op;
+	_Byte bp_htype;
+	_Byte bp_hlen;
+	_Byte bp_hops;
+	_DWord bp_xid;
 	struct
 	{
 		unsigned bp_secs:16;
@@ -585,53 +585,53 @@ struct dhcp_header
 		unsigned bp_broadcast:1;
 		unsigned bp_spare1:8;
 	};
-	MYDWORD bp_ciaddr;
-	MYDWORD bp_yiaddr;
-	MYDWORD bp_siaddr;
-	MYDWORD bp_giaddr;
-	MYBYTE bp_chaddr[16];
+	_DWord bp_ciaddr;
+	_DWord bp_yiaddr;
+	_DWord bp_siaddr;
+	_DWord bp_giaddr;
+	_Byte bp_chaddr[16];
 	char bp_sname[64];
-	MYBYTE bp_file[128];
-	MYBYTE bp_magic_num[4];
+	_Byte bp_file[128];
+	_Byte bp_magic_num[4];
 };
 
 struct dhcp_packet
 {
 	dhcp_header header;
-	MYBYTE vend_data[1024 - sizeof(dhcp_header)];
+	_Byte vend_data[1024 - sizeof(dhcp_header)];
 };
 
 struct data13 //dhcp range
 {
-	MYBYTE rangeSetInd;
-	MYDWORD rangeStart;
-	MYDWORD rangeEnd;
-	MYDWORD mask;
-	MYBYTE *options;
+	_Byte rangeSetInd;
+	_DWord rangeStart;
+	_DWord rangeEnd;
+	_DWord mask;
+	_Byte *options;
 	time_t *expiry;
 	CachedData **dhcpEntry;
 };
 
 struct data14 //rangeSet
 {
-	MYBYTE active;
-	MYBYTE *macStart[MAX_RANGE_FILTERS];
-	MYBYTE *macEnd[MAX_RANGE_FILTERS];
-	MYBYTE macSize[MAX_RANGE_FILTERS];
-	MYBYTE *vendClass[MAX_RANGE_FILTERS];
-	MYBYTE vendClassSize[MAX_RANGE_FILTERS];
-	MYBYTE *userClass[MAX_RANGE_FILTERS];
-	MYBYTE userClassSize[MAX_RANGE_FILTERS];
-	MYDWORD subnetIP[MAX_RANGE_FILTERS];
-	MYDWORD targetIP;
+	_Byte active;
+	_Byte *macStart[MAX_RANGE_FILTERS];
+	_Byte *macEnd[MAX_RANGE_FILTERS];
+	_Byte macSize[MAX_RANGE_FILTERS];
+	_Byte *vendClass[MAX_RANGE_FILTERS];
+	_Byte vendClassSize[MAX_RANGE_FILTERS];
+	_Byte *userClass[MAX_RANGE_FILTERS];
+	_Byte userClassSize[MAX_RANGE_FILTERS];
+	_DWord subnetIP[MAX_RANGE_FILTERS];
+	_DWord targetIP;
 };
 
 struct data17
 {
-	MYBYTE macArray[MAX_RANGE_SETS];
-	MYBYTE vendArray[MAX_RANGE_SETS];
-	MYBYTE userArray[MAX_RANGE_SETS];
-	MYBYTE subnetArray[MAX_RANGE_SETS];
+	_Byte macArray[MAX_RANGE_SETS];
+	_Byte vendArray[MAX_RANGE_SETS];
+	_Byte userArray[MAX_RANGE_SETS];
+	_Byte subnetArray[MAX_RANGE_SETS];
 	bool macFound;
 	bool vendFound;
 	bool userFound;
@@ -651,16 +651,16 @@ struct data19
 
 struct data20
 {
-	MYBYTE options[sizeof(dhcp_packet)];
-	MYWORD optionSize;
-	MYDWORD ip;
-	MYDWORD mask;
-	MYBYTE rangeSetInd;
+	_Byte options[sizeof(dhcp_packet)];
+	_Word optionSize;
+	_DWord ip;
+	_DWord mask;
+	_Byte rangeSetInd;
 };
 
 struct data9 //dhcpRequst
 {
-	MYDWORD lease;
+	_DWord lease;
 	union
 	{
 		char raw[sizeof(dhcp_packet)];
@@ -669,39 +669,39 @@ struct data9 //dhcpRequst
 	char hostname[256];
 	char chaddr[64];
 	char tempbuff[256];
-	MYDWORD specifiedServers[MAX_SERVERS];
-	MYDWORD specifiedDnsServers[MAX_SERVERS];
-	MYDWORD server;
-	MYDWORD reqIP;
+	_DWord specifiedServers[MAX_SERVERS];
+	_DWord specifiedDnsServers[MAX_SERVERS];
+	_DWord server;
+	_DWord reqIP;
 	int bytes;
 	SOCKADDR_IN remote;
 	socklen_t sockLen;
-	MYWORD messsize;
-	MYBYTE *vp;
+	_Word messsize;
+	_Byte *vp;
 	CachedData *dhcpEntry;
 	data3 agentOption;
 	data3 clientId;
 	data3 subnet;
 	data3 vendClass;
 	data3 userClass;
-	MYDWORD subnetIP;
-	MYDWORD targetIP;
-	MYDWORD rebind;
-	MYDWORD dns;
-	MYBYTE paramreqlist[256];
-	MYBYTE opAdded[256];
-	MYBYTE req_type;
-	MYBYTE resp_type;
-	MYBYTE sockInd;
+	_DWord subnetIP;
+	_DWord targetIP;
+	_DWord rebind;
+	_DWord dns;
+	_Byte paramreqlist[256];
+	_Byte opAdded[256];
+	_Byte req_type;
+	_Byte resp_type;
+	_Byte sockInd;
 };
 
 struct DhcpConnType
 {
 	SOCKET sock;
 	SOCKADDR_IN addr;
-	MYDWORD server;
-	MYWORD port;
-	MYDWORD mask;
+	_DWord server;
+	_Word port;
+	_DWord mask;
 	int broadCastVal;
 	int broadCastSize;
 	int reUseVal;
@@ -715,8 +715,8 @@ struct DhcpConnType
 struct data4
 {
 	char opName[40];
-	MYBYTE opTag;
-	MYBYTE opType;
+	_Byte opTag;
+	_Byte opType;
 	bool permitted;
 };
 
@@ -724,21 +724,21 @@ struct data15
 {
 	union
 	{
-		//MYDWORD ip;
+		//_DWord ip;
 		unsigned ip:32;
-		MYBYTE octate[4];
+		_Byte octate[4];
 	};
 };
 
 struct data8 //client
 {
-	MYWORD dhcpInd;
-	MYBYTE bp_hlen;
-	MYBYTE local;
-	MYDWORD source;
-	MYDWORD ip;
+	_Word dhcpInd;
+	_Byte bp_hlen;
+	_Byte local;
+	_DWord source;
+	_DWord ip;
 	time_t expiry;
-	MYBYTE bp_chaddr[16];
+	_Byte bp_chaddr[16];
 	char hostname[64];
 };
 
@@ -749,14 +749,14 @@ struct data1
 	ConnType forwConn;
 	ConnType dnsTcpConn[MAX_SERVERS];
 	ConnType httpConn;
-	MYDWORD allServers[MAX_SERVERS];
-	MYDWORD listenServers[MAX_SERVERS];
-	MYDWORD listenMasks[MAX_SERVERS];
-	MYDWORD staticServers[MAX_SERVERS];
-	MYDWORD staticMasks[MAX_SERVERS];
-	MYDWORD dns[MAX_SERVERS];
+	_DWord allServers[MAX_SERVERS];
+	_DWord listenServers[MAX_SERVERS];
+	_DWord listenMasks[MAX_SERVERS];
+	_DWord staticServers[MAX_SERVERS];
+	_DWord staticMasks[MAX_SERVERS];
+	_DWord dns[MAX_SERVERS];
 	SOCKET maxFD;
-	MYBYTE currentDNS;
+	_Byte currentDNS;
 	bool ready;
 	bool busy;
 	bool bindfailed;
@@ -766,10 +766,10 @@ struct data2
 {
 	WSADATA wsaData;
 	char zone[256];
-	MYBYTE zLen;
+	_Byte zLen;
 	char authoritySmall[256];
 	char authority[256];
-	MYBYTE aLen;
+	_Byte aLen;
 	CHAR nsP[256];
 	CHAR nsS[256];
 	//CHAR nsP[2][256];
@@ -778,118 +778,118 @@ struct data2
 	char servername[128];
 	char servername_fqn[256];
 	data11 mxServers[2][5];
-	MYBYTE mxCount[2];
-	MYDWORD mask;
-	MYDWORD lease;
-	MYDWORD serial1;
-	MYDWORD serial2;
-	MYDWORD refresh;
-	MYDWORD retry;
-	MYDWORD expire;
-	MYDWORD minimum;
-	MYWORD minCache;
-	MYWORD maxCache;
-	MYDWORD dhcpSize;
+	_Byte mxCount[2];
+	_DWord mask;
+	_DWord lease;
+	_DWord serial1;
+	_DWord serial2;
+	_DWord refresh;
+	_DWord retry;
+	_DWord expire;
+	_DWord minimum;
+	_Word minCache;
+	_Word maxCache;
+	_DWord dhcpSize;
 	time_t expireTime;
-	MYDWORD httpClients[8];
-	MYDWORD specifiedServers[MAX_SERVERS];
-	MYDWORD specifiedDnsServers[MAX_SERVERS];
-	MYDWORD zoneServers[MAX_TCP_CLIENTS];
-	data10 dnsRoutes[MAX_COND_FORW];
-	data16 wildHosts[MAX_WILD_HOSTS];
+	_DWord httpClients[8];
+	_DWord specifiedServers[MAX_SERVERS];
+	_DWord specifiedDnsServers[MAX_SERVERS];
+	_DWord zoneServers[MAX_TCP_CLIENTS];
+	DNSRoute dnsRoutes[MAX_COND_FORW];
+	WildCardHost wildCardHosts[MAX_WILDCARD_HOSTS];
 	data12 dnsRanges[MAX_DNS_RANGES];
 	data13 dhcpRanges[MAX_DHCP_RANGES];
 	data14 rangeSet[MAX_RANGE_SETS];
 	ConnType dhcpReplConn;
-	MYBYTE hasFilter;
-	MYDWORD rangeStart;
-	MYDWORD rangeEnd;
-	MYBYTE *options;
-	MYWORD dhcpInd;
+	_Byte hasFilter;
+	_DWord rangeStart;
+	_DWord rangeEnd;
+	_Byte *options;
+	_Word dhcpInd;
 	char logFileName[_MAX_PATH];
-	MYDWORD failureCount;
+	_DWord failureCount;
 	time_t dhcpRepl;
 	time_t dnsRepl;
 	time_t dnsCheck;
-	MYBYTE rangeCount;
-	MYBYTE dhcpLogLevel;
-	MYBYTE dnsLogLevel;
-	MYBYTE authorized;
-	MYBYTE replication;
+	_Byte rangeCount;
+	_Byte dhcpLogLevel;
+	_Byte dnsLogLevel;
+	_Byte authorized;
+	_Byte replication;
 };
 
 //Function Prototypes
-FILE *openSection(const char *sectionName, MYBYTE serial);
-MYBYTE fromBase64(MYBYTE *target, char *source);
-MYBYTE fromUUE(MYBYTE *target, char *source);
-MYBYTE getBaseValue(MYBYTE a);
-MYBYTE makeLocal(char *mapname);
-MYBYTE pIP(void *raw, MYDWORD data);
-MYBYTE pULong(void *raw, MYDWORD data);
-MYBYTE pUShort(void *raw, MYWORD data);
-MYBYTE addServer(MYDWORD *array, MYBYTE maxServers, MYDWORD ip);
-MYDWORD *findServer(MYDWORD *array, MYBYTE maxServers, MYDWORD ip);
-MYDWORD alad(data9 *req);
-MYDWORD calcMask(MYDWORD rangeStart, MYDWORD rangeEnd);
-MYDWORD chad(data9 *req);
-MYDWORD fIP(void *raw);
-MYDWORD fULong(void *raw);
-MYDWORD getClassNetwork(MYDWORD ip);
-MYDWORD getSerial(char *zone);
-MYDWORD getZone(MYBYTE ind, char *zone);
-MYDWORD resad(data9 *req);
-MYDWORD sdmess(data9 *req);
-MYDWORD sendRepl(CachedData *dhcpEntry);
-MYDWORD sendRepl(data9 *req);
-MYWORD fQu(char *query, dnsPacket *mess, char *raw);
-MYWORD fUShort(void *raw);
-MYWORD fdnmess(data5 *req);
-MYWORD frdnmess(data5 *req);
-MYWORD gdmess(data9 *req, MYBYTE sockInd);
-MYWORD gdnmess(data5 *req, MYBYTE sockInd);
-MYWORD myTokenize(char *target, char *source, const char *sep, bool whiteSep);
-MYWORD pQu(char *raw, char *query);
-MYWORD qLen(char *query);
-MYWORD recvTcpDnsMess(char *target, SOCKET sock, MYWORD targetSize);
-MYWORD scanloc(data5 *req);
-MYWORD sdnmess(data5 *req);
-MYWORD sendTCPmess(data5 *req);
-bool checkMask(MYDWORD mask);
+FILE *openSection(const char *sectionName, _Byte serial);
+_Byte fromBase64(_Byte *target, char *source);
+_Byte fromUUE(_Byte *target, char *source);
+_Byte getBaseValue(_Byte a);
+_Byte makeLocal(char *mapname);
+_Byte pIP(void *raw, _DWord data);
+_Byte pULong(void *raw, _DWord data);
+_Byte pUShort(void *raw, _Word data);
+_Byte addServer(_DWord *array, _Byte maxServers, _DWord ip);
+_DWord *findServer(_DWord *array, _Byte maxServers, _DWord ip);
+_DWord alad(data9 *req);
+_DWord calcMask(_DWord rangeStart, _DWord rangeEnd);
+_DWord chad(data9 *req);
+_DWord fIP(void *raw);
+_DWord fULong(void *raw);
+_DWord getClassNetwork(_DWord ip);
+_DWord getSerial(char *zone);
+_DWord getZone(_Byte ind, char *zone);
+_DWord resad(data9 *req);
+_DWord sdmess(data9 *req);
+_DWord sendRepl(CachedData *dhcpEntry);
+_DWord sendRepl(data9 *req);
+_Word fQu(char *query, dnsPacket *mess, char *raw);
+_Word fUShort(void *raw);
+_Word fdnmess(data5 *req);
+_Word frdnmess(data5 *req);
+_Word gdmess(data9 *req, _Byte sockInd);
+_Word gdnmess(data5 *req, _Byte sockInd);
+_Word myTokenize(char *target, char *source, const char *sep, bool whiteSep);
+_Word pQu(char *raw, char *query);
+_Word qLen(char *query);
+_Word recvTcpDnsMess(char *target, SOCKET sock, _Word targetSize);
+_Word scanloc(data5 *req);
+_Word sdnmess(data5 *req);
+_Word sendTCPmess(data5 *req);
+bool checkMask(_DWord mask);
 bool checkRange(data17 *rangeData, char rangeInd);
 bool chkQu(char *query);
 bool detectChange();
 bool getSecondary();
-bool getSection(const char *sectionName, char *buffer, MYBYTE serial, char *fileName);
+bool getSection(const char *sectionName, char *buffer, _Byte serial, char *fileName);
 bool isIP(char *str);
 bool isInt(char *str);
-bool isLocal(MYDWORD ip);
+bool isLocal(_DWord ip);
 bool stopService(SC_HANDLE service);
 bool wildcmp(char *string, char *wild);
-char *IP2Auth(MYDWORD ip);
-char *IP2String(char *target, MYDWORD ip);
-char *IP2String(char *target, MYDWORD ip, MYBYTE dnsType);
-char *IP62String(char *target, MYBYTE *source);
+char *IP2Auth(_DWord ip);
+char *IP2String(char *target, _DWord ip);
+char *IP2String(char *target, _DWord ip, _Byte dnsType);
+char *IP62String(char *target, _Byte *source);
 char *cloneString(char *string);
-char *genHostName(char *target, MYBYTE *hex, MYBYTE bytes);
-char *getHexValue(MYBYTE *target, char *source, MYBYTE *size);
-char *hex2String(char *target, MYBYTE *hex, MYBYTE bytes);
+char *genHostName(char *target, _Byte *hex, _Byte bytes);
+char *getHexValue(_Byte *target, char *source, _Byte *size);
+char *hex2String(char *target, _Byte *hex, _Byte bytes);
 char *myLower(char *string);
 char *myUpper(char *string);
 char *readSection(char* buff, FILE *f);
-char *setMapName(char *tempbuff, char *mapname, MYBYTE dnsType);
+char *setMapName(char *tempbuff, char *mapname, _Byte dnsType);
 char *strquery(data5 *req);
-char *toBase64(MYBYTE *source, MYBYTE length);
-char *toUUE(char *tempbuff, MYBYTE *source, MYBYTE length);
-char getRangeInd(MYDWORD ip);
+char *toBase64(_Byte *source, _Byte length);
+char *toUUE(char *tempbuff, _Byte *source, _Byte length);
+char getRangeInd(_DWord ip);
 char* getResult(data5 *req);
-char* myGetToken(char* buff, MYBYTE index);
+char* myGetToken(char* buff, _Byte index);
 char* myTrim(char *target, char *source);
 CachedData *createCache(data71 *lump);
 CachedData *findDHCPEntry(char *key);
-CachedData *findEntry(char *key, MYBYTE dnsType);
-CachedData *findEntry(char *key, MYBYTE dnsType, MYBYTE cType);
+CachedData *findEntry(char *key, _Byte dnsType);
+CachedData *findEntry(char *key, _Byte dnsType, _Byte cType);
 CachedData *findQueue(char *key);
-int getIndex(char rangeInd, MYDWORD ip);
+int getIndex(char rangeInd, _DWord ip);
 int main(int argc, TCHAR* argv[]);
 void WINAPI ServiceControlHandler(DWORD controlCode);
 void WINAPI ServiceMain(DWORD /*argc*/, TCHAR* /*argv*/[]);
@@ -900,11 +900,11 @@ void __cdecl logThread(void *lpParam);
 void __cdecl sendHTTP(void *lpParam);
 void __cdecl sendToken(void *lpParam);
 void __cdecl updateStateFile(void *lpParam);
-void add2Cache(char *hostname, MYDWORD ip, time_t expiry, MYBYTE aType, MYBYTE pType);
+void add2Cache(char *hostname, _DWord ip, time_t expiry, _Byte aType, _Byte pType);
 void addDHCPRange(char *dp);
 void addEntry(CachedData *entry);
 void addHostNotFound(char *hostname);
-void addMacRange(MYBYTE rangeSetInd, char *macRange);
+void addMacRange(_Byte rangeSetInd, char *macRange);
 void addOptions(data9 *req);
 void addRRA(data5 *req);
 void addRRAOne(data5 *req);
@@ -913,12 +913,12 @@ void addRRAny(data5 *req);
 void addRRCNOne(data5 *req);
 void addRRCache(data5 *req, CachedData *cache);
 void addRREmpty(data5 *req);
-void addRRError(data5 *req, MYBYTE rcode);
+void addRRError(data5 *req, _Byte rcode);
 void addRRExt(data5 *req);
 void addRRLocalhostA(data5 *req, CachedData *cache);
 void addRRLocalhostPtr(data5 *req, CachedData *cache);
 void addRRMX(data5 *req);
-void addRRMXOne(data5 *req, MYBYTE m);
+void addRRMXOne(data5 *req, _Byte m);
 void addRRNS(data5 *req);
 void addRRNone(data5 *req);
 void addRRPtr(data5 *req);
@@ -926,32 +926,32 @@ void addRRPtrOne(data5 *req);
 void addRRSOA(data5 *req);
 void addRRSTAOne(data5 *req);
 void addRRServerA(data5 *req);
-void addRRWildA(data5 *req, MYDWORD ip);
-void addUserClass(MYBYTE rangeSetInd, char *userClass, MYBYTE userClassSize);
-void addVendClass(MYBYTE rangeSetInd, char *vendClass, MYBYTE vendClassSize);
-void calcRangeLimits(MYDWORD ip, MYDWORD mask, MYDWORD *rangeStart, MYDWORD *rangeEnd);
+void addRRWildA(data5 *req, _DWord ip);
+void addUserClass(_Byte rangeSetInd, char *userClass, _Byte userClassSize);
+void addVendClass(_Byte rangeSetInd, char *vendClass, _Byte vendClassSize);
+void calcRangeLimits(_DWord ip, _DWord mask, _DWord *rangeStart, _DWord *rangeEnd);
 void checkSize();
 void closeConn();
 void debug(const char *mess);
 void debug(int i);
 void delDnsEntry(CachedData* cache);
-void emptyCache(MYBYTE ind);
-void expireEntry(MYDWORD ip);
+void emptyCache(_Byte ind);
+void expireEntry(_DWord ip);
 void getInterfaces(data1 *network);
-void holdIP(MYDWORD ip);
+void holdIP(_DWord ip);
 void installService();
 void listCache();
 void listDhcpCache();
 void loadDHCP();
 void loadOptions(FILE *f, const char *sectionName, data20 *optionData);
-void lockIP(MYDWORD ip);
+void lockIP(_DWord ip);
 void lockOptions(FILE *f);
-void logDHCPMess(char *logBuff, MYBYTE logLevel);
-void logDNSMess(char *logBuff, MYBYTE logLevel);
-void logDNSMess(data5 *req, char *logBuff, MYBYTE logLevel);
+void logDHCPMess(char *logBuff, _Byte logLevel);
+void logDNSMess(char *logBuff, _Byte logLevel);
+void logDNSMess(data5 *req, char *logBuff, _Byte logLevel);
 void logDirect(char *mess);
-void logMess(char *logBuff, MYBYTE logLevel);
-void logTCPMess(data5 *req, char *logBuff, MYBYTE logLevel);
+void logMess(char *logBuff, _Byte logLevel);
+void logTCPMess(data5 *req, char *logBuff, _Byte logLevel);
 void mySplit(char *name, char *value, char *source, char splitChar);
 void procHTTP(data19 *req);
 void procTCP(data5 *req);
@@ -963,9 +963,9 @@ void sendScopeStatus(data19 *req);
 void sendServerName();
 void sendStatus(data19 *req);
 void setLeaseExpiry(CachedData *dhcpEntry);
-void setLeaseExpiry(CachedData *dhcpEntry, MYDWORD lease);
+void setLeaseExpiry(CachedData *dhcpEntry, _DWord lease);
 void setTempLease(CachedData *dhcpEntry);
-void showError(MYDWORD enumber);
+void showError(_DWord enumber);
 void uninstallService();
 void updateDNS(data9 *req);
 FILE *pullZone(SOCKET sock);
