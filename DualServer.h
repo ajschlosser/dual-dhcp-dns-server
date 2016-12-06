@@ -251,7 +251,7 @@ typedef multimap<time_t, CachedData*> expiryMap;
 
 struct data5 //DNS request
 {
-	DNSPacket *dnsp;
+	DNSPacket *dnsPacket;
 	char *dp;
 	char raw[2048];
 	char query[256];
