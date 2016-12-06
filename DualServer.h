@@ -232,7 +232,7 @@ struct CachedData //cache
 	_Byte data;
 };
 
-struct data71 //Lump
+struct Lump //Lump
 {
 	char *mapname;
 	_Byte *response;
@@ -313,7 +313,7 @@ enum
 	QTYPE_CHILDZONE
 };
 
-struct data12 //DNS range
+struct DNSRange //DNS range
 {
 	_DWord rangeStart;
 	_DWord rangeEnd;
@@ -399,13 +399,13 @@ struct dns_rr
 	} data;
 };
 
-struct data11 //mx
+struct MaxServers //mx
 {
 	char hostname[256];
 	_Word pref;
 };
 
-struct ConnType
+struct ConnectionType
 {
 	SOCKET sock;
 	SOCKADDR_IN addr;
@@ -670,9 +670,9 @@ struct DHCPRequest //dhcpRequst
 	char chaddr[64];
 	char tempbuff[256];
 	_DWord specifiedServers[MAX_SERVERS];
-	_DWord specifiedDnsServers[MAX_SERVERS];
+	_DWord specifiedDNSServers[MAX_SERVERS];
 	_DWord server;
-	_DWord reqIP;
+	_DWord requestIP;
 	int bytes;
 	SOCKADDR_IN remote;
 	socklen_t sockLen;
@@ -720,7 +720,7 @@ struct data4
 	bool permitted;
 };
 
-struct data15
+struct InternetAddress
 {
 	union
 	{
@@ -730,7 +730,7 @@ struct data15
 	};
 };
 
-struct data8 //client
+struct DHCPClient //client
 {
 	_Word dhcpInd;
 	_Byte bp_hlen;
@@ -745,11 +745,11 @@ struct data8 //client
 struct Network
 {
 	DHCPConnectionType dhcpConn[MAX_SERVERS];
-	ConnType DNS_UDPConnections[MAX_SERVERS];
-	ConnType forwConn;
-	ConnType DNS_TCPConnections[MAX_SERVERS];
-	ConnType HTTPConnection;
-	ConnType APIConnection;
+	ConnectionType DNS_UDPConnections[MAX_SERVERS];
+	ConnectionType forwConn;
+	ConnectionType DNS_TCPConnections[MAX_SERVERS];
+	ConnectionType HTTPConnection;
+	ConnectionType APIConnection;
 	_DWord allServers[MAX_SERVERS];
 	_DWord listenServers[MAX_SERVERS];
 	_DWord listenMasks[MAX_SERVERS];
@@ -778,7 +778,7 @@ struct Config
 	//CHAR nsPBare[256];
 	char servername[128];
 	char servername_fqn[256];
-	data11 mxServers[2][5];
+	MaxServers mxServers[2][5];
 	_Byte mxCount[2];
 	_DWord mask;
 	_DWord lease;
@@ -794,14 +794,14 @@ struct Config
 	time_t expireTime;
 	_DWord HTTPClients[8];
 	_DWord specifiedServers[MAX_SERVERS];
-	_DWord specifiedDnsServers[MAX_SERVERS];
+	_DWord specifiedDNSServers[MAX_SERVERS];
 	_DWord zoneServers[MAX_TCP_CLIENTS];
 	DNSRoute dnsRoutes[MAX_COND_FORW];
 	WildcardHost wildcardHosts[MAX_WILDCARD_HOSTS];
-	data12 dnsRanges[MAX_DNS_RANGES];
+	DNSRange dnsRanges[MAX_DNS_RANGES];
 	DHCPRange dhcpRanges[MAX_DHCP_RANGES];
 	RangeSet rangeSet[MAX_RANGE_SETS];
-	ConnType dhcpReplConn;
+	ConnectionType dhcpReplConn;
 	_Byte hasFilter;
 	_DWord rangeStart;
 	_DWord rangeEnd;
@@ -854,10 +854,10 @@ _Word qLen(char *query);
 _Word recvTcpDnsMess(char *target, SOCKET sock, _Word targetSize);
 _Word scanloc(DNSRequest *req);
 _Word sdnmess(DNSRequest *req);
-_Word sendTCPmess(DNSRequest *req);
+_Word sendTCPMessage(DNSRequest *req);
 bool checkMask(_DWord mask);
 bool checkRange(RangeData *rangeData, char rangeInd);
-bool chkQu(char *query);
+bool checkQueue(char *query);
 bool detectChange();
 bool getSecondary();
 bool getSection(const char *sectionName, char *buffer, _Byte serial, char *fileName);
@@ -885,7 +885,7 @@ char getRangeInd(_DWord ip);
 char* getResult(DNSRequest *req);
 char* myGetToken(char* buff, _Byte index);
 char* myTrim(char *target, char *source);
-CachedData *createCache(data71 *lump);
+CachedData *createCache(Lump *lump);
 CachedData *findDHCPEntry(char *key);
 CachedData *findEntry(char *key, _Byte dnsType);
 CachedData *findEntry(char *key, _Byte dnsType, _Byte cType);
@@ -947,15 +947,15 @@ void loadDHCP();
 void loadOptions(FILE *f, const char *sectionName, OptionData *optionData);
 void lockIP(_DWord ip);
 void lockOptions(FILE *f);
-void logDHCPMess(char *logBuff, _Byte logLevel);
-void logDNSMess(char *logBuff, _Byte logLevel);
-void logDNSMess(DNSRequest *req, char *logBuff, _Byte logLevel);
+void logDHCPMessage(char *logBuff, _Byte logLevel);
+void logDNSMessage(char *logBuff, _Byte logLevel);
+void logDNSMessage(DNSRequest *req, char *logBuff, _Byte logLevel);
 void logDirect(char *mess);
-void logMess(char *logBuff, _Byte logLevel);
-void logTCPMess(DNSRequest *req, char *logBuff, _Byte logLevel);
+void logMessage(char *logBuff, _Byte logLevel);
+void logTCPMessage(DNSRequest *req, char *logBuff, _Byte logLevel);
 void mySplit(char *name, char *value, char *source, char splitChar);
-void procHTTP(SocketRequest *req);
-void procTCP(DNSRequest *req);
+void processHTTP(SocketRequest *req);
+void processTCP(DNSRequest *req);
 void pvdata(DHCPRequest *req, data3 *op);
 void recvRepl(DHCPRequest *req);
 void runProg();
