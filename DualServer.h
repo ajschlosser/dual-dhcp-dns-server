@@ -162,7 +162,7 @@ struct DNSHeader
 };
 */
 
-struct dnsPacket
+struct DNSPacket
 {
 	struct DNSHeader header;
 	char data;
@@ -251,7 +251,7 @@ typedef multimap<time_t, CachedData*> expiryMap;
 
 struct data5 //DNS request
 {
-	dnsPacket *dnsp;
+	DNSPacket *dnsp;
 	char *dp;
 	char raw[2048];
 	char query[256];
@@ -842,7 +842,7 @@ _DWord resad(DHCPRequest *req);
 _DWord sdmess(DHCPRequest *req);
 _DWord sendRepl(CachedData *dhcpEntry);
 _DWord sendRepl(DHCPRequest *req);
-_Word fQu(char *query, dnsPacket *mess, char *raw);
+_Word fQu(char *query, DNSPacket *mess, char *raw);
 _Word fUShort(void *raw);
 _Word fdnmess(data5 *req);
 _Word frdnmess(data5 *req);
