@@ -571,7 +571,7 @@ struct data3
 
 typedef map<string, CachedData*> dhcpMap;
 
-struct dhcp_header
+struct DHCPHeader
 {
 	_Byte bp_op;
 	_Byte bp_htype;
@@ -595,13 +595,13 @@ struct dhcp_header
 	_Byte bp_magic_num[4];
 };
 
-struct dhcp_packet
+struct DHCPPacket
 {
-	dhcp_header header;
-	_Byte vend_data[1024 - sizeof(dhcp_header)];
+	DHCPHeader header;
+	_Byte vend_data[1024 - sizeof(DHCPHeader)];
 };
 
-struct data13 //dhcp range
+struct DHCPRange //dhcp range
 {
 	_Byte rangeSetInd;
 	_DWord rangeStart;
@@ -612,7 +612,7 @@ struct data13 //dhcp range
 	CachedData **dhcpEntry;
 };
 
-struct data14 //rangeSet
+struct RangeSet //rangeSet
 {
 	_Byte active;
 	_Byte *macStart[MAX_RANGE_FILTERS];
@@ -626,7 +626,7 @@ struct data14 //rangeSet
 	_DWord targetIP;
 };
 
-struct data17
+struct RangeData
 {
 	_Byte macArray[MAX_RANGE_SETS];
 	_Byte vendArray[MAX_RANGE_SETS];
@@ -638,7 +638,7 @@ struct data17
 	bool subnetFound;
 };
 
-struct data19
+struct SocketRequest
 {
 	SOCKET sock;
 	SOCKADDR_IN remote;
@@ -651,20 +651,20 @@ struct data19
 
 struct OptionData
 {
-	_Byte options[sizeof(dhcp_packet)];
+	_Byte options[sizeof(DHCPPacket)];
 	_Word optionSize;
 	_DWord ip;
 	_DWord mask;
 	_Byte rangeSetInd;
 };
 
-struct data9 //dhcpRequst
+struct DHCPRequest //dhcpRequst
 {
 	_DWord lease;
 	union
 	{
-		char raw[sizeof(dhcp_packet)];
-		dhcp_packet dhcpp;
+		char raw[sizeof(DHCPPacket)];
+		DHCPPacket DHCPPacket;
 	};
 	char hostname[256];
 	char chaddr[64];
@@ -695,7 +695,7 @@ struct data9 //dhcpRequst
 	_Byte sockInd;
 };
 
-struct DhcpConnType
+struct DHCPConnectionType
 {
 	SOCKET sock;
 	SOCKADDR_IN addr;
@@ -744,7 +744,7 @@ struct data8 //client
 
 struct Network
 {
-	DhcpConnType dhcpConn[MAX_SERVERS];
+	DHCPConnectionType dhcpConn[MAX_SERVERS];
 	ConnType DNS_UDPConnections[MAX_SERVERS];
 	ConnType forwConn;
 	ConnType DNS_TCPConnections[MAX_SERVERS];
@@ -799,8 +799,8 @@ struct Config
 	DNSRoute dnsRoutes[MAX_COND_FORW];
 	WildcardHost wildcardHosts[MAX_WILDCARD_HOSTS];
 	data12 dnsRanges[MAX_DNS_RANGES];
-	data13 dhcpRanges[MAX_DHCP_RANGES];
-	data14 rangeSet[MAX_RANGE_SETS];
+	DHCPRange dhcpRanges[MAX_DHCP_RANGES];
+	RangeSet rangeSet[MAX_RANGE_SETS];
 	ConnType dhcpReplConn;
 	_Byte hasFilter;
 	_DWord rangeStart;
@@ -830,23 +830,23 @@ _Byte pULong(void *raw, _DWord data);
 _Byte pUShort(void *raw, _Word data);
 _Byte addServer(_DWord *array, _Byte maxServers, _DWord ip);
 _DWord *findServer(_DWord *array, _Byte maxServers, _DWord ip);
-_DWord alad(data9 *req);
+_DWord alad(DHCPRequest *req);
 _DWord calcMask(_DWord rangeStart, _DWord rangeEnd);
-_DWord chad(data9 *req);
+_DWord chad(DHCPRequest *req);
 _DWord fIP(void *raw);
 _DWord fULong(void *raw);
 _DWord getClassNetwork(_DWord ip);
 _DWord getSerial(char *zone);
 _DWord getZone(_Byte ind, char *zone);
-_DWord resad(data9 *req);
-_DWord sdmess(data9 *req);
+_DWord resad(DHCPRequest *req);
+_DWord sdmess(DHCPRequest *req);
 _DWord sendRepl(CachedData *dhcpEntry);
-_DWord sendRepl(data9 *req);
+_DWord sendRepl(DHCPRequest *req);
 _Word fQu(char *query, dnsPacket *mess, char *raw);
 _Word fUShort(void *raw);
 _Word fdnmess(data5 *req);
 _Word frdnmess(data5 *req);
-_Word gdmess(data9 *req, _Byte sockInd);
+_Word gdmess(DHCPRequest *req, _Byte sockInd);
 _Word gdnmess(data5 *req, _Byte sockInd);
 _Word myTokenize(char *target, char *source, const char *sep, bool whiteSep);
 _Word pQu(char *raw, char *query);
@@ -856,7 +856,7 @@ _Word scanloc(data5 *req);
 _Word sdnmess(data5 *req);
 _Word sendTCPmess(data5 *req);
 bool checkMask(_DWord mask);
-bool checkRange(data17 *rangeData, char rangeInd);
+bool checkRange(RangeData *rangeData, char rangeInd);
 bool chkQu(char *query);
 bool detectChange();
 bool getSecondary();
@@ -906,7 +906,7 @@ void addDHCPRange(char *dp);
 void addEntry(CachedData *entry);
 void addHostNotFound(char *hostname);
 void addMacRange(_Byte rangeSetInd, char *macRange);
-void addOptions(data9 *req);
+void addOptions(DHCPRequest *req);
 void addRRA(data5 *req);
 void addRRAOne(data5 *req);
 void addRRAd(data5 *req);
@@ -954,19 +954,19 @@ void logDirect(char *mess);
 void logMess(char *logBuff, _Byte logLevel);
 void logTCPMess(data5 *req, char *logBuff, _Byte logLevel);
 void mySplit(char *name, char *value, char *source, char splitChar);
-void procHTTP(data19 *req);
+void procHTTP(SocketRequest *req);
 void procTCP(data5 *req);
-void pvdata(data9 *req, data3 *op);
-void recvRepl(data9 *req);
+void pvdata(DHCPRequest *req, data3 *op);
+void recvRepl(DHCPRequest *req);
 void runProg();
 void runService();
-void sendScopeStatus(data19 *req);
+void sendScopeStatus(SocketRequest *req);
 void sendServerName();
-void sendStatus(data19 *req);
+void sendStatus(SocketRequest *req);
 void setLeaseExpiry(CachedData *dhcpEntry);
 void setLeaseExpiry(CachedData *dhcpEntry, _DWord lease);
 void setTempLease(CachedData *dhcpEntry);
 void showError(_DWord enumber);
 void uninstallService();
-void updateDNS(data9 *req);
+void updateDNS(DHCPRequest *req);
 FILE *pullZone(SOCKET sock);

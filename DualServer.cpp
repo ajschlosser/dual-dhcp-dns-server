@@ -38,8 +38,8 @@ HANDLE stopServiceEvent = 0;
 //Network network;
 Network network;
 Config config;
-data9 token;
-data9 dhcpr;
+DHCPRequest token;
+DHCPRequest dhcpRequest;
 data5 dnsr;
 data71 lump;
 data18 magin;
@@ -338,7 +338,7 @@ void WINAPI ServiceMain(DWORD /*argc*/, TCHAR* /*argv*/[])
 				{
 					if (network.HTTPConnection.ready && FD_ISSET(network.HTTPConnection.sock, &readfds))
 					{
-						data19 *req = (data19*)calloc(1, sizeof(data19));
+						SocketRequest *req = (SocketRequest*)calloc(1, sizeof(SocketRequest));
 
 						if (req)
 						{
@@ -364,7 +364,7 @@ void WINAPI ServiceMain(DWORD /*argc*/, TCHAR* /*argv*/[])
 
 					if (network.APIConnection.ready && FD_ISSET(network.APIConnection.sock, &readfds))
 					{
-						data19 *req = (data19*)calloc(1, sizeof(data19));
+						SocketRequest *req = (SocketRequest*)calloc(1, sizeof(SocketRequest));
 
 						if (req)
 						{
@@ -391,25 +391,25 @@ void WINAPI ServiceMain(DWORD /*argc*/, TCHAR* /*argv*/[])
 					if (config.dhcpReplConn.ready && FD_ISSET(config.dhcpReplConn.sock, &readfds))
 					{
 						errno = 0;
-						dhcpr.sockLen = sizeof(dhcpr.remote);
+						dhcpRequest.sockLen = sizeof(dhcpRequest.remote);
 
-						dhcpr.bytes = recvfrom(config.dhcpReplConn.sock,
-											   dhcpr.raw,
-											   sizeof(dhcpr.raw),
+						dhcpRequest.bytes = recvfrom(config.dhcpReplConn.sock,
+											   dhcpRequest.raw,
+											   sizeof(dhcpRequest.raw),
 											   0,
-											   (sockaddr*)&dhcpr.remote,
-											   &dhcpr.sockLen);
+											   (sockaddr*)&dhcpRequest.remote,
+											   &dhcpRequest.sockLen);
 
 						errno = WSAGetLastError();
 
-						if (errno || dhcpr.bytes <= 0)
+						if (errno || dhcpRequest.bytes <= 0)
 							config.dhcpRepl = 0;
 					}
 
 					for (int i = 0; i < MAX_SERVERS && network.dhcpConn[i].ready; i++)
 					{
-						if (FD_ISSET(network.dhcpConn[i].sock, &readfds) && gdmess(&dhcpr, i) && sdmess(&dhcpr))
-							alad(&dhcpr);
+						if (FD_ISSET(network.dhcpConn[i].sock, &readfds) && gdmess(&dhcpRequest, i) && sdmess(&dhcpRequest))
+							alad(&dhcpRequest);
 					}
 				}
 
@@ -897,7 +897,7 @@ void runProg()
 			{
 				if (network.HTTPConnection.ready && FD_ISSET(network.HTTPConnection.sock, &readfds))
 				{
-					data19 *req = (data19*)calloc(1, sizeof(data19));
+					SocketRequest *req = (SocketRequest*)calloc(1, sizeof(SocketRequest));
 
 					if (req)
 					{
@@ -924,25 +924,25 @@ void runProg()
 				if (config.dhcpReplConn.ready && FD_ISSET(config.dhcpReplConn.sock, &readfds))
 				{
 					errno = 0;
-					dhcpr.sockLen = sizeof(dhcpr.remote);
+					dhcpRequest.sockLen = sizeof(dhcpRequest.remote);
 
-					dhcpr.bytes = recvfrom(config.dhcpReplConn.sock,
-										   dhcpr.raw,
-										   sizeof(dhcpr.raw),
+					dhcpRequest.bytes = recvfrom(config.dhcpReplConn.sock,
+										   dhcpRequest.raw,
+										   sizeof(dhcpRequest.raw),
 										   0,
-										   (sockaddr*)&dhcpr.remote,
-										   &dhcpr.sockLen);
+										   (sockaddr*)&dhcpRequest.remote,
+										   &dhcpRequest.sockLen);
 
 					errno = WSAGetLastError();
 
-					if (errno || dhcpr.bytes <= 0)
+					if (errno || dhcpRequest.bytes <= 0)
 						config.dhcpRepl = 0;
 				}
 
 				for (int i = 0; i < MAX_SERVERS && network.dhcpConn[i].ready; i++)
 				{
-					if (FD_ISSET(network.dhcpConn[i].sock, &readfds) && gdmess(&dhcpr, i) && sdmess(&dhcpr))
-						alad(&dhcpr);
+					if (FD_ISSET(network.dhcpConn[i].sock, &readfds) && gdmess(&dhcpRequest, i) && sdmess(&dhcpRequest))
+						alad(&dhcpRequest);
 				}
 			}
 
@@ -1987,7 +1987,7 @@ void addRRMXOne(data5 *req, _Byte m)
 	//req->bytes = req->dp - req->raw;
 }
 
-void procHTTP(data19 *req)
+void procHTTP(SocketRequest *req)
 {
 	//debug("procHTTP");
 	char logBuff[512];
@@ -2084,7 +2084,7 @@ void procHTTP(data19 *req)
 	}
 }
 
-void sendStatus(data19 *req)
+void sendStatus(SocketRequest *req)
 {
 	//debug("sendStatus");
 	char ipbuff[16];
@@ -2309,7 +2309,7 @@ void sendStatus(data19 *req)
 }
 
 /*
-void sendScopeStatus(data19 *req)
+void sendScopeStatus(SocketRequest *req)
 {
 	//debug("sendScopeStatus");
 
@@ -2369,7 +2369,7 @@ void sendScopeStatus(data19 *req)
 
 void __cdecl sendHTTP(void *lpParam)
 {
-	data19 *req = (data19*)lpParam;
+	SocketRequest *req = (SocketRequest*)lpParam;
 
 	//sprintf(logBuff, "sendHTTP memsize=%d bytes=%d", req->memSize, req->bytes);
 	//(logBuff);
@@ -3884,7 +3884,7 @@ char* getResult(data5 *req)
 }
 
 
-bool checkRange(data17 *rangeData, char rangeInd)
+bool checkRange(RangeData *rangeData, char rangeInd)
 {
 	//debug("checkRange");
 
@@ -3892,7 +3892,7 @@ bool checkRange(data17 *rangeData, char rangeInd)
 		return true;
 
 	_Byte rangeSetInd = config.dhcpRanges[rangeInd].rangeSetInd;
-	data14 *rangeSet = &config.rangeSet[rangeSetInd];
+	RangeSet *rangeSet = &config.rangeSet[rangeSetInd];
 	//printf("checkRange entering, rangeInd=%i rangeSetInd=%i\n", rangeInd, rangeSetInd);
 	//printf("checkRange entered, macFound=%i vendFound=%i userFound=%i\n", macFound, vendFound, userFound);
 
@@ -3906,7 +3906,7 @@ bool checkRange(data17 *rangeData, char rangeInd)
 	return false;
 }
 
-_DWord resad(data9 *req)
+_DWord resad(DHCPRequest *req)
 {
 	//debug("resad");
 	char logBuff[512];
@@ -3914,9 +3914,9 @@ _DWord resad(data9 *req)
 	_DWord minRange = 0;
 	_DWord maxRange = 0;
 
-	if (req->dhcpp.header.bp_giaddr)
+	if (req->DHCPPacket.header.bp_giaddr)
 	{
-		lockIP(req->dhcpp.header.bp_giaddr);
+		lockIP(req->DHCPPacket.header.bp_giaddr);
 		lockIP(req->remote.sin_addr.s_addr);
 	}
 
@@ -3946,21 +3946,21 @@ _DWord resad(data9 *req)
 	_DWord rangeEnd = 0;
 	char rangeInd = -1;
 	bool rangeFound = false;
-	data17 rangeData;
-	memset(&rangeData, 0, sizeof(data17));
+	RangeData rangeData;
+	memset(&rangeData, 0, sizeof(RangeData));
 
 	if (config.hasFilter)
 	{
 		for (_Byte rangeSetInd = 0; rangeSetInd < MAX_RANGE_SETS && config.rangeSet[rangeSetInd].active; rangeSetInd++)
 		{
-			data14 *rangeSet = &config.rangeSet[rangeSetInd];
+			RangeSet *rangeSet = &config.rangeSet[rangeSetInd];
 
 			for (_Byte i = 0; i < MAX_RANGE_FILTERS && rangeSet->macSize[i]; i++)
 			{
 				//printf("%s\n", hex2String(tempbuff, rangeSet->macStart[i], rangeSet->macSize[i]));
 				//printf("%s\n", hex2String(tempbuff, rangeSet->macEnd[i], rangeSet->macSize[i]));
 
-				if(memcmp(req->dhcpp.header.bp_chaddr, rangeSet->macStart[i], rangeSet->macSize[i]) >= 0 && memcmp(req->dhcpp.header.bp_chaddr, rangeSet->macEnd[i], rangeSet->macSize[i]) <= 0)
+				if(memcmp(req->DHCPPacket.header.bp_chaddr, rangeSet->macStart[i], rangeSet->macSize[i]) >= 0 && memcmp(req->DHCPPacket.header.bp_chaddr, rangeSet->macEnd[i], rangeSet->macSize[i]) <= 0)
 				{
 					rangeData.macArray[rangeSetInd] = 1;
 					rangeData.macFound = true;
@@ -4065,7 +4065,7 @@ _DWord resad(data9 *req)
 				{
 					if (checkRange(&rangeData, k))
 					{
-						data13 *range = &config.dhcpRanges[k];
+						DHCPRange *range = &config.dhcpRanges[k];
 						int ind = getIndex(k, cache->ip);
 
 						if (ind >= 0 && range->expiry[ind] <= t)
@@ -4104,7 +4104,7 @@ _DWord resad(data9 *req)
 		{
 			if (checkRange(&rangeData, k))
 			{
-				data13 *range = &config.dhcpRanges[k];
+				DHCPRange *range = &config.dhcpRanges[k];
 				int ind = getIndex(k, req->reqIP);
 
 				if (range->expiry[ind] <= t)
@@ -4136,7 +4136,7 @@ _DWord resad(data9 *req)
 	{
 		if (checkRange(&rangeData, k))
 		{
-			data13 *range = &config.dhcpRanges[k];
+			DHCPRange *range = &config.dhcpRanges[k];
 			rangeStart = range->rangeStart;
 			rangeEnd = range->rangeEnd;
 
@@ -4247,15 +4247,15 @@ _DWord resad(data9 *req)
 	{
 		if (rangeFound)
 		{
-			if (req->dhcpp.header.bp_giaddr)
-				sprintf(logBuff, "No free leases for DHCPDISCOVER for %s (%s) from RelayAgent %s", req->chaddr, req->hostname, IP2String(tempbuff, req->dhcpp.header.bp_giaddr));
+			if (req->DHCPPacket.header.bp_giaddr)
+				sprintf(logBuff, "No free leases for DHCPDISCOVER for %s (%s) from RelayAgent %s", req->chaddr, req->hostname, IP2String(tempbuff, req->DHCPPacket.header.bp_giaddr));
 			else
 				sprintf(logBuff, "No free leases for DHCPDISCOVER for %s (%s) from interface %s", req->chaddr, req->hostname, IP2String(tempbuff, network.dhcpConn[req->sockInd].server));
 		}
 		else
 		{
-			if (req->dhcpp.header.bp_giaddr)
-				sprintf(logBuff, "No Matching DHCP Range for DHCPDISCOVER for %s (%s) from RelayAgent %s", req->chaddr, req->hostname, IP2String(tempbuff, req->dhcpp.header.bp_giaddr));
+			if (req->DHCPPacket.header.bp_giaddr)
+				sprintf(logBuff, "No Matching DHCP Range for DHCPDISCOVER for %s (%s) from RelayAgent %s", req->chaddr, req->hostname, IP2String(tempbuff, req->DHCPPacket.header.bp_giaddr));
 			else
 				sprintf(logBuff, "No Matching DHCP Range for DHCPDISCOVER for %s (%s) from interface %s", req->chaddr, req->hostname, IP2String(tempbuff, network.dhcpConn[req->sockInd].server));
 		}
@@ -4264,7 +4264,7 @@ _DWord resad(data9 *req)
 	return 0;
 }
 
-_DWord chad(data9 *req)
+_DWord chad(DHCPRequest *req)
 {
 	req->dhcpEntry = findDHCPEntry(req->chaddr);
 	//printf("dhcpEntry=%d\n", req->dhcpEntry);
@@ -4275,7 +4275,7 @@ _DWord chad(data9 *req)
 		return 0;
 }
 
-_DWord sdmess(data9 *req)
+_DWord sdmess(DHCPRequest *req)
 {
 	//sprintf(logBuff, "sdmess, Request Type = %u",req->req_type);
 	//debug(logBuff);
@@ -4284,9 +4284,9 @@ _DWord sdmess(data9 *req)
 
 	if (req->req_type == DHCP_MESS_NONE)
 	{
-		req->dhcpp.header.bp_yiaddr = chad(req);
+		req->DHCPPacket.header.bp_yiaddr = chad(req);
 
-		if (!req->dhcpp.header.bp_yiaddr)
+		if (!req->DHCPPacket.header.bp_yiaddr)
 		{
 			if (verbatim || config.dhcpLogLevel)
 			{
@@ -4299,9 +4299,9 @@ _DWord sdmess(data9 *req)
 	}
 	else if (req->req_type == DHCP_MESS_DECLINE)
 	{
-		if (req->dhcpp.header.bp_ciaddr && chad(req) == req->dhcpp.header.bp_ciaddr)
+		if (req->DHCPPacket.header.bp_ciaddr && chad(req) == req->DHCPPacket.header.bp_ciaddr)
 		{
-			lockIP(req->dhcpp.header.bp_ciaddr);
+			lockIP(req->DHCPPacket.header.bp_ciaddr);
 
 			req->dhcpEntry->ip = 0;
 			req->dhcpEntry->expiry = INT_MAX;
@@ -4310,7 +4310,7 @@ _DWord sdmess(data9 *req)
 
 			if (verbatim || config.dhcpLogLevel)
 			{
-				sprintf(logBuff, "IP Address %s declined by Host %s (%s), locked", IP2String(tempbuff, req->dhcpp.header.bp_ciaddr), req->chaddr, req->hostname);
+				sprintf(logBuff, "IP Address %s declined by Host %s (%s), locked", IP2String(tempbuff, req->DHCPPacket.header.bp_ciaddr), req->chaddr, req->hostname);
 				logDHCPMess(logBuff, 1);
 			}
 		}
@@ -4319,7 +4319,7 @@ _DWord sdmess(data9 *req)
 	}
 	else if (req->req_type == DHCP_MESS_RELEASE)
 	{
-		if (req->dhcpp.header.bp_ciaddr && chad(req) == req->dhcpp.header.bp_ciaddr)
+		if (req->DHCPPacket.header.bp_ciaddr && chad(req) == req->DHCPPacket.header.bp_ciaddr)
 		{
 			req->dhcpEntry->display = false;
 			req->dhcpEntry->local = false;
@@ -4332,7 +4332,7 @@ _DWord sdmess(data9 *req)
 
 			if (verbatim || config.dhcpLogLevel)
 			{
-				sprintf(logBuff, "IP Address %s released by Host %s (%s)", IP2String(tempbuff, req->dhcpp.header.bp_ciaddr), req->chaddr, req->hostname);
+				sprintf(logBuff, "IP Address %s released by Host %s (%s)", IP2String(tempbuff, req->DHCPPacket.header.bp_ciaddr), req->chaddr, req->hostname);
 				logDHCPMess(logBuff, 1);
 			}
 		}
@@ -4352,16 +4352,16 @@ _DWord sdmess(data9 *req)
 	}
 	else if (req->req_type == DHCP_MESS_DISCOVER && strcasecmp(req->hostname, config.servername))
 	{
-		req->dhcpp.header.bp_yiaddr = resad(req);
+		req->DHCPPacket.header.bp_yiaddr = resad(req);
 
-		if (!req->dhcpp.header.bp_yiaddr)
+		if (!req->DHCPPacket.header.bp_yiaddr)
 			return 0;
 
 		req->resp_type = DHCP_MESS_OFFER;
 	}
 	else if (req->req_type == DHCP_MESS_REQUEST)
 	{
-		//printf("%s\n", IP2String(tempbuff, req->dhcpp.header.bp_ciaddr));
+		//printf("%s\n", IP2String(tempbuff, req->DHCPPacket.header.bp_ciaddr));
 
 		if (req->server)
 		{
@@ -4370,17 +4370,17 @@ _DWord sdmess(data9 *req)
 				if (req->reqIP && req->reqIP == chad(req) && req->dhcpEntry->expiry > t)
 				{
 					req->resp_type = DHCP_MESS_ACK;
-					req->dhcpp.header.bp_yiaddr = req->reqIP;
+					req->DHCPPacket.header.bp_yiaddr = req->reqIP;
 				}
-				else if (req->dhcpp.header.bp_ciaddr && req->dhcpp.header.bp_ciaddr == chad(req) && req->dhcpEntry->expiry > t)
+				else if (req->DHCPPacket.header.bp_ciaddr && req->DHCPPacket.header.bp_ciaddr == chad(req) && req->dhcpEntry->expiry > t)
 				{
 					req->resp_type = DHCP_MESS_ACK;
-					req->dhcpp.header.bp_yiaddr = req->dhcpp.header.bp_ciaddr;
+					req->DHCPPacket.header.bp_yiaddr = req->DHCPPacket.header.bp_ciaddr;
 				}
 				else
 				{
 					req->resp_type = DHCP_MESS_NAK;
-					req->dhcpp.header.bp_yiaddr = 0;
+					req->DHCPPacket.header.bp_yiaddr = 0;
 
 					if (verbatim || config.dhcpLogLevel)
 					{
@@ -4392,20 +4392,20 @@ _DWord sdmess(data9 *req)
 			else
 				return 0;
 		}
-		else if (req->dhcpp.header.bp_ciaddr && req->dhcpp.header.bp_ciaddr == chad(req) && req->dhcpEntry->expiry > t)
+		else if (req->DHCPPacket.header.bp_ciaddr && req->DHCPPacket.header.bp_ciaddr == chad(req) && req->dhcpEntry->expiry > t)
 		{
 			req->resp_type = DHCP_MESS_ACK;
-			req->dhcpp.header.bp_yiaddr = req->dhcpp.header.bp_ciaddr;
+			req->DHCPPacket.header.bp_yiaddr = req->DHCPPacket.header.bp_ciaddr;
 		}
 		else if (req->reqIP && req->reqIP == chad(req) && req->dhcpEntry->expiry > t)
 		{
 			req->resp_type = DHCP_MESS_ACK;
-			req->dhcpp.header.bp_yiaddr = req->reqIP;
+			req->DHCPPacket.header.bp_yiaddr = req->reqIP;
 		}
 		else
 		{
 			req->resp_type = DHCP_MESS_NAK;
-			req->dhcpp.header.bp_yiaddr = 0;
+			req->DHCPPacket.header.bp_yiaddr = 0;
 
 			if (verbatim || config.dhcpLogLevel)
 			{
@@ -4418,13 +4418,13 @@ _DWord sdmess(data9 *req)
 		return 0;
 
 	addOptions(req);
-	int packSize = req->vp - (_Byte*)&req->dhcpp;
+	int packSize = req->vp - (_Byte*)&req->DHCPPacket;
 	packSize++;
 
 	if (req->req_type == DHCP_MESS_NONE)
 		packSize = req->messsize;
 
-	if ((req->dhcpp.header.bp_giaddr || !req->remote.sin_addr.s_addr) && req->dhcpEntry && req->dhcpEntry->rangeInd >= 0)
+	if ((req->DHCPPacket.header.bp_giaddr || !req->remote.sin_addr.s_addr) && req->dhcpEntry && req->dhcpEntry->rangeInd >= 0)
 	{
 		_Byte rangeSetInd = config.dhcpRanges[req->dhcpEntry->rangeInd].rangeSetInd;
 		req->targetIP = config.rangeSet[rangeSetInd].targetIP;
@@ -4435,13 +4435,13 @@ _DWord sdmess(data9 *req)
 		req->remote.sin_port = htons(IPPORT_DHCPS);
 		req->remote.sin_addr.s_addr = req->targetIP;
 	}
-	else if (req->dhcpp.header.bp_giaddr)
+	else if (req->DHCPPacket.header.bp_giaddr)
 	{
 		req->remote.sin_port = htons(IPPORT_DHCPS);
-		req->remote.sin_addr.s_addr = req->dhcpp.header.bp_giaddr;
+		req->remote.sin_addr.s_addr = req->DHCPPacket.header.bp_giaddr;
 	}
-	//else if (req->dhcpp.header.bp_broadcast || !req->remote.sin_addr.s_addr || req->reqIP)
-	else if (req->dhcpp.header.bp_broadcast || !req->remote.sin_addr.s_addr)
+	//else if (req->DHCPPacket.header.bp_broadcast || !req->remote.sin_addr.s_addr || req->reqIP)
+	else if (req->DHCPPacket.header.bp_broadcast || !req->remote.sin_addr.s_addr)
 	{
 		req->remote.sin_port = htons(IPPORT_DHCPC);
 		req->remote.sin_addr.s_addr = INADDR_BROADCAST;
@@ -4451,10 +4451,10 @@ _DWord sdmess(data9 *req)
 		req->remote.sin_port = htons(IPPORT_DHCPC);
 	}
 
-	req->dhcpp.header.bp_op = BOOTP_REPLY;
+	req->DHCPPacket.header.bp_op = BOOTP_REPLY;
 	errno = 0;
 
-	if (req->req_type == DHCP_MESS_DISCOVER && !req->dhcpp.header.bp_giaddr)
+	if (req->req_type == DHCP_MESS_DISCOVER && !req->DHCPPacket.header.bp_giaddr)
 	{
 		req->bytes = sendto(network.dhcpConn[req->sockInd].sock,
 							req->raw,
@@ -4476,11 +4476,11 @@ _DWord sdmess(data9 *req)
 	if (errno || req->bytes <= 0)
 		return 0;
 
-	//printf("goes=%s %i\n",IP2String(tempbuff, req->dhcpp.header.bp_yiaddr),req->sockInd);
-	return req->dhcpp.header.bp_yiaddr;
+	//printf("goes=%s %i\n",IP2String(tempbuff, req->DHCPPacket.header.bp_yiaddr),req->sockInd);
+	return req->DHCPPacket.header.bp_yiaddr;
 }
 
-_DWord alad(data9 *req)
+_DWord alad(DHCPRequest *req)
 {
 	//debug("alad");
 	//printf("in alad hostname=%s\n", req->hostname);
@@ -4507,15 +4507,15 @@ _DWord alad(data9 *req)
 		{
 			if (req->lease && req->reqIP)
 			{
-				sprintf(logBuff, "Host %s (%s) allotted %s for %u seconds", req->chaddr, req->hostname, IP2String(tempbuff, req->dhcpp.header.bp_yiaddr), req->lease);
+				sprintf(logBuff, "Host %s (%s) allotted %s for %u seconds", req->chaddr, req->hostname, IP2String(tempbuff, req->DHCPPacket.header.bp_yiaddr), req->lease);
 			}
 			else if (req->req_type)
 			{
-				sprintf(logBuff, "Host %s (%s) renewed %s for %u seconds", req->chaddr, req->hostname, IP2String(tempbuff, req->dhcpp.header.bp_yiaddr), req->lease);
+				sprintf(logBuff, "Host %s (%s) renewed %s for %u seconds", req->chaddr, req->hostname, IP2String(tempbuff, req->DHCPPacket.header.bp_yiaddr), req->lease);
 			}
 			else
 			{
-				sprintf(logBuff, "BOOTP Host %s (%s) allotted %s", req->chaddr, req->hostname, IP2String(tempbuff, req->dhcpp.header.bp_yiaddr));
+				sprintf(logBuff, "BOOTP Host %s (%s) allotted %s", req->chaddr, req->hostname, IP2String(tempbuff, req->DHCPPacket.header.bp_yiaddr));
 			}
 			logDHCPMess(logBuff, 1);
 		}
@@ -4527,14 +4527,14 @@ _DWord alad(data9 *req)
 	}
 	else if ((verbatim || config.dhcpLogLevel >= 2) && req->resp_type == DHCP_MESS_OFFER)
 	{
-		sprintf(logBuff, "Host %s (%s) offered %s", req->chaddr, req->hostname, IP2String(tempbuff, req->dhcpp.header.bp_yiaddr));
+		sprintf(logBuff, "Host %s (%s) offered %s", req->chaddr, req->hostname, IP2String(tempbuff, req->DHCPPacket.header.bp_yiaddr));
 		logDHCPMess(logBuff, 2);
 	}
 	//printf("%u=out\n", req->resp_type);
 	return 0;
 }
 
-void addOptions(data9 *req)
+void addOptions(DHCPRequest *req)
 {
 	//debug("addOptions");
 
@@ -4551,7 +4551,7 @@ void addOptions(data9 *req)
 
 	if (req->dhcpEntry && req->resp_type != DHCP_MESS_DECLINE && req->resp_type != DHCP_MESS_NAK)
 	{
-		strcpy(req->dhcpp.header.bp_sname, config.servername);
+		strcpy(req->DHCPPacket.header.bp_sname, config.servername);
 
 		if (req->dhcpEntry->fixed)
 		{
@@ -4664,7 +4664,7 @@ void addOptions(data9 *req)
 			}
 
 			if (!req->hostname[0])
-				genHostName(req->hostname, req->dhcpp.header.bp_chaddr, req->dhcpp.header.bp_hlen);
+				genHostName(req->hostname, req->DHCPPacket.header.bp_chaddr, req->DHCPPacket.header.bp_hlen);
 
 			strcpy(req->dhcpEntry->hostname, req->hostname);
 /*
@@ -4736,18 +4736,18 @@ void addOptions(data9 *req)
 	*(req->vp) = DHCP_OPTION_END;
 }
 
-void pvdata(data9 *req, data3 *op)
+void pvdata(DHCPRequest *req, data3 *op)
 {
 	//debug("pvdata");
 
-	if (!req->opAdded[op->opt_code] && ((req->vp - (_Byte*)&req->dhcpp) + op->size < req->messsize))
+	if (!req->opAdded[op->opt_code] && ((req->vp - (_Byte*)&req->DHCPPacket) + op->size < req->messsize))
 	{
 		if (op->opt_code == DHCP_OPTION_NEXTSERVER)
-			req->dhcpp.header.bp_siaddr = fIP(op->value);
+			req->DHCPPacket.header.bp_siaddr = fIP(op->value);
 		else if (op->opt_code == DHCP_OPTION_BP_FILE)
 		{
 			if (op->size <= 128)
-				memcpy(req->dhcpp.header.bp_file, op->value, op->size);
+				memcpy(req->DHCPPacket.header.bp_file, op->value, op->size);
 		}
 		else if(op->size)
 		{
@@ -4783,7 +4783,7 @@ void pvdata(data9 *req, data3 *op)
 	}
 }
 
-void updateDNS(data9 *req)
+void updateDNS(DHCPRequest *req)
 {
 	_DWord expiry = INT_MAX;
 
@@ -4933,13 +4933,13 @@ void __cdecl sendToken(void *lpParam)
 }
 
 
-_DWord sendRepl(data9 *req)
+_DWord sendRepl(DHCPRequest *req)
 {
 	char logBuff[512];
 	char ipbuff[32];
 	data3 op;
 
-	_Byte *opPointer = req->dhcpp.vend_data;
+	_Byte *opPointer = req->DHCPPacket.vend_data;
 
 	while ((*opPointer) != DHCP_OPTION_END && opPointer < req->vp)
 	{
@@ -4976,7 +4976,7 @@ _DWord sendRepl(data9 *req)
 	req->vp++;
 	req->bytes = req->vp - (_Byte*)req->raw;
 
-	req->dhcpp.header.bp_op = BOOTP_REQUEST;
+	req->DHCPPacket.header.bp_op = BOOTP_REQUEST;
 	errno = 0;
 
 	req->bytes = sendto(config.dhcpReplConn.sock,
@@ -5014,43 +5014,43 @@ _DWord sendRepl(data9 *req)
 		logDHCPMess(logBuff, 2);
 	}
 
-	return req->dhcpp.header.bp_yiaddr;
+	return req->DHCPPacket.header.bp_yiaddr;
 }
 
 /*
 _DWord sendRepl(CachedData *dhcpEntry)
 {
-	data9 req;
-	memset(&req, 0, sizeof(data9));
-	req.vp = req.dhcpp.vend_data;
-	req.messsize = sizeof(dhcp_packet);
+	DHCPRequest req;
+	memset(&req, 0, sizeof(DHCPRequest));
+	req.vp = req.DHCPPacket.vend_data;
+	req.messsize = sizeof(DHCPPacket);
 	req.dhcpEntry = dhcpEntry;
 
-	req.dhcpp.header.bp_op = BOOTP_REQUEST;
-	req.dhcpp.header.bp_xid = t;
-	req.dhcpp.header.bp_ciaddr = dhcpEntry->ip;
-	req.dhcpp.header.bp_yiaddr = dhcpEntry->ip;
-	req.dhcpp.header.bp_hlen = 16;
-	getHexValue(req.dhcpp.header.bp_chaddr, req.dhcpEntry->mapname, &(req.dhcpp.header.bp_hlen));
-	req.dhcpp.header.bp_magic_num[0] = 99;
-	req.dhcpp.header.bp_magic_num[1] = 130;
-	req.dhcpp.header.bp_magic_num[2] = 83;
-	req.dhcpp.header.bp_magic_num[3] = 99;
+	req.DHCPPacket.header.bp_op = BOOTP_REQUEST;
+	req.DHCPPacket.header.bp_xid = t;
+	req.DHCPPacket.header.bp_ciaddr = dhcpEntry->ip;
+	req.DHCPPacket.header.bp_yiaddr = dhcpEntry->ip;
+	req.DHCPPacket.header.bp_hlen = 16;
+	getHexValue(req.DHCPPacket.header.bp_chaddr, req.dhcpEntry->mapname, &(req.DHCPPacket.header.bp_hlen));
+	req.DHCPPacket.header.bp_magic_num[0] = 99;
+	req.DHCPPacket.header.bp_magic_num[1] = 130;
+	req.DHCPPacket.header.bp_magic_num[2] = 83;
+	req.DHCPPacket.header.bp_magic_num[3] = 99;
 	strcpy(req.hostname, dhcpEntry->hostname);
 
 	return sendRepl(&req);
 }
 */
 
-void recvRepl(data9 *req)
+void recvRepl(DHCPRequest *req)
 {
 	char ipbuff[32];
 	char logBuff[512];
 	config.dhcpRepl = t + 650;
 
-	_DWord ip = req->dhcpp.header.bp_yiaddr ? req->dhcpp.header.bp_yiaddr : req->dhcpp.header.bp_ciaddr;
+	_DWord ip = req->DHCPPacket.header.bp_yiaddr ? req->DHCPPacket.header.bp_yiaddr : req->DHCPPacket.header.bp_ciaddr;
 
-	if (!ip || !req->dhcpp.header.bp_hlen)
+	if (!ip || !req->DHCPPacket.header.bp_hlen)
 	{
 //		if (verbatim || config.dhcpLogLevel >= 2)
 //		{
@@ -5063,14 +5063,14 @@ void recvRepl(data9 *req)
 
 		if (config.replication == 1)
 		{
-			if (req->dhcpp.header.bp_sname[0])
+			if (req->DHCPPacket.header.bp_sname[0])
 			{
-				sprintf(config.nsS, "%s.%s", req->dhcpp.header.bp_sname, config.zone);
+				sprintf(config.nsS, "%s.%s", req->DHCPPacket.header.bp_sname, config.zone);
 
 				if (isLocal(config.zoneServers[1]))
-					add2Cache(req->dhcpp.header.bp_sname, config.zoneServers[1], INT_MAX, CTYPE_SERVER_A_AUTH, CTYPE_SERVER_PTR_AUTH);
+					add2Cache(req->DHCPPacket.header.bp_sname, config.zoneServers[1], INT_MAX, CTYPE_SERVER_A_AUTH, CTYPE_SERVER_PTR_AUTH);
 				else
-					add2Cache(req->dhcpp.header.bp_sname, config.zoneServers[1], INT_MAX, CTYPE_SERVER_A_AUTH, CTYPE_SERVER_PTR_NAUTH);
+					add2Cache(req->DHCPPacket.header.bp_sname, config.zoneServers[1], INT_MAX, CTYPE_SERVER_A_AUTH, CTYPE_SERVER_PTR_NAUTH);
 			}
 
 			errno = 0;
@@ -5092,8 +5092,8 @@ void recvRepl(data9 *req)
 		}
 		else if (config.replication == 2)
 		{
-			if (req->dhcpp.header.bp_sname[0])
-				sprintf(config.nsP, "%s.%s", req->dhcpp.header.bp_sname, config.zone);
+			if (req->DHCPPacket.header.bp_sname[0])
+				sprintf(config.nsP, "%s.%s", req->DHCPPacket.header.bp_sname, config.zone);
 		}
 
 		return;
@@ -5241,7 +5241,7 @@ void loadOptions(FILE *f, const char *sectionName, OptionData *optionData)
 	optionData->ip = 0;
 	optionData->mask = 0;
 	_Byte maxInd = sizeof(opData) / sizeof(data4);
-	_Word buffsize = sizeof(dhcp_packet) - sizeof(dhcp_header);
+	_Word buffsize = sizeof(DHCPPacket) - sizeof(DHCPHeader);
 	_Byte *dp = optionData->options;
 	_Byte op_specified[256];
 
@@ -5902,7 +5902,7 @@ void addDHCPRange(char *dp)
 
 		if (rs && re && rs <= re)
 		{
-			data13 *range;
+			DHCPRange *range;
 			_Byte m = 0;
 
 			for (; m < MAX_DHCP_RANGES && config.dhcpRanges[m].rangeStart; m++)
@@ -5959,7 +5959,7 @@ void addDHCPRange(char *dp)
 void addVendClass(_Byte rangeSetInd, char *vendClass, _Byte vendClassSize)
 {
 	char logBuff[512];
-	data14 *rangeSet = &config.rangeSet[rangeSetInd];
+	RangeSet *rangeSet = &config.rangeSet[rangeSetInd];
 
 	_Byte i = 0;
 
@@ -5988,7 +5988,7 @@ void addVendClass(_Byte rangeSetInd, char *vendClass, _Byte vendClassSize)
 void addUserClass(_Byte rangeSetInd, char *userClass, _Byte userClassSize)
 {
 	char logBuff[512];
-	data14 *rangeSet = &config.rangeSet[rangeSetInd];
+	RangeSet *rangeSet = &config.rangeSet[rangeSetInd];
 
 	_Byte i = 0;
 
@@ -6019,7 +6019,7 @@ void addMacRange(_Byte rangeSetInd, char *macRange)
 
 	if (macRange[0])
 	{
-		data14 *rangeSet = &config.rangeSet[rangeSetInd];
+		RangeSet *rangeSet = &config.rangeSet[rangeSetInd];
 
 		_Byte i = 0;
 
@@ -9570,9 +9570,9 @@ void __cdecl init(void *lpParam)
 					config.dhcpReplConn.ready = true;
 
 					data3 op;
-					memset(&token, 0, sizeof(data9));
-					token.vp = token.dhcpp.vend_data;
-					token.messsize = sizeof(dhcp_packet);
+					memset(&token, 0, sizeof(DHCPRequest));
+					token.vp = token.DHCPPacket.vend_data;
+					token.messsize = sizeof(DHCPPacket);
 
 					token.remote.sin_port = htons(IPPORT_DHCPS);
 					token.remote.sin_family = AF_INET;
@@ -9582,13 +9582,13 @@ void __cdecl init(void *lpParam)
 					else if (config.replication == 2)
 						token.remote.sin_addr.s_addr = config.zoneServers[0];
 
-					token.dhcpp.header.bp_op = BOOTP_REQUEST;
-					token.dhcpp.header.bp_xid = t;
-					strcpy(token.dhcpp.header.bp_sname, config.servername);
-					token.dhcpp.header.bp_magic_num[0] = 99;
-					token.dhcpp.header.bp_magic_num[1] = 130;
-					token.dhcpp.header.bp_magic_num[2] = 83;
-					token.dhcpp.header.bp_magic_num[3] = 99;
+					token.DHCPPacket.header.bp_op = BOOTP_REQUEST;
+					token.DHCPPacket.header.bp_xid = t;
+					strcpy(token.DHCPPacket.header.bp_sname, config.servername);
+					token.DHCPPacket.header.bp_magic_num[0] = 99;
+					token.DHCPPacket.header.bp_magic_num[1] = 130;
+					token.DHCPPacket.header.bp_magic_num[2] = 83;
+					token.DHCPPacket.header.bp_magic_num[3] = 99;
 
 					op.opt_code = DHCP_OPTION_MESSAGETYPE;
 					op.size = 1;
@@ -10418,12 +10418,12 @@ void __cdecl updateStateFile(void *lpParam)
 	return;
 }
 
-_Word gdmess(data9 *req, _Byte sockInd)
+_Word gdmess(DHCPRequest *req, _Byte sockInd)
 {
 	//debug("gdmess");
 	char ipbuff[32];
 	char logBuff[512];
-	memset(req, 0, sizeof(data9));
+	memset(req, 0, sizeof(DHCPRequest));
 	req->sockInd = sockInd;
 	req->sockLen = sizeof(req->remote);
 	errno = 0;
@@ -10441,14 +10441,14 @@ _Word gdmess(data9 *req, _Byte sockInd)
 
 	//printf("errno=%u\n", errno);
 
-	if (errno || req->bytes <= 0 || req->dhcpp.header.bp_op != BOOTP_REQUEST)
+	if (errno || req->bytes <= 0 || req->DHCPPacket.header.bp_op != BOOTP_REQUEST)
 		return 0;
 
-	hex2String(req->chaddr, req->dhcpp.header.bp_chaddr, req->dhcpp.header.bp_hlen);
+	hex2String(req->chaddr, req->DHCPPacket.header.bp_chaddr, req->DHCPPacket.header.bp_hlen);
 
 	data3 *op;
-	_Byte *raw = req->dhcpp.vend_data;
-	_Byte *rawEnd = raw + (req->bytes - sizeof(dhcp_header));
+	_Byte *raw = req->DHCPPacket.vend_data;
+	_Byte *rawEnd = raw + (req->bytes - sizeof(DHCPHeader));
 
 	for (; raw < rawEnd && *raw != DHCP_OPTION_END;)
 	{
@@ -10531,8 +10531,8 @@ _Word gdmess(data9 *req, _Byte sockInd)
 
 	if (!req->subnetIP)
 	{
-		if (req->dhcpp.header.bp_giaddr)
-			req->subnetIP = req->dhcpp.header.bp_giaddr;
+		if (req->DHCPPacket.header.bp_giaddr)
+			req->subnetIP = req->DHCPPacket.header.bp_giaddr;
 		else
 			req->subnetIP = network.dhcpConn[req->sockInd].server;
 	}
@@ -10542,12 +10542,12 @@ _Word gdmess(data9 *req, _Byte sockInd)
 		if (req->req_type == DHCP_MESS_NONE)
 			req->messsize = req->bytes;
 		else
-			req->messsize = sizeof(dhcp_packet);
+			req->messsize = sizeof(DHCPPacket);
 	}
 
-//	if (!req->hostname[0] && req->dhcpp.header.bp_ciaddr)
+//	if (!req->hostname[0] && req->DHCPPacket.header.bp_ciaddr)
 //	{
-//		CachedData* cache = findEntry(IP2String(ipbuff, htonl(req->dhcpp.header.bp_ciaddr)), DNS_TYPE_PTR);
+//		CachedData* cache = findEntry(IP2String(ipbuff, htonl(req->DHCPPacket.header.bp_ciaddr)), DNS_TYPE_PTR);
 //
 //		if (cache)
 //			strcpy(req->hostname, cache->hostname);
@@ -10555,8 +10555,8 @@ _Word gdmess(data9 *req, _Byte sockInd)
 //
 //	if ((req->req_type == 1 || req->req_type == 3) && config.dhcpLogLevel == 3)
 //	{
-//		data9 *req1 = (data9*)calloc(1, sizeof(data9));
-//		memcpy(req1, req, sizeof(data9));
+//		DHCPRequest *req1 = (DHCPRequest*)calloc(1, sizeof(DHCPRequest));
+//		memcpy(req1, req, sizeof(DHCPRequest));
 //		_beginthread(logDebug, 0, req1);
 //	}
 
@@ -10564,8 +10564,8 @@ _Word gdmess(data9 *req, _Byte sockInd)
 	{
 		if (req->req_type == DHCP_MESS_NONE)
 		{
-			if (req->dhcpp.header.bp_giaddr)
-				sprintf(logBuff, "BOOTPREQUEST for %s (%s) from RelayAgent %s received", req->chaddr, req->hostname, IP2String(ipbuff, req->dhcpp.header.bp_giaddr));
+			if (req->DHCPPacket.header.bp_giaddr)
+				sprintf(logBuff, "BOOTPREQUEST for %s (%s) from RelayAgent %s received", req->chaddr, req->hostname, IP2String(ipbuff, req->DHCPPacket.header.bp_giaddr));
 			else
 				sprintf(logBuff, "BOOTPREQUEST for %s (%s) from interface %s received", req->chaddr, req->hostname, IP2String(ipbuff, network.dhcpConn[req->sockInd].server));
 
@@ -10573,8 +10573,8 @@ _Word gdmess(data9 *req, _Byte sockInd)
 		}
 		else if (req->req_type == DHCP_MESS_DISCOVER)
 		{
-			if (req->dhcpp.header.bp_giaddr)
-				sprintf(logBuff, "DHCPDISCOVER for %s (%s) from RelayAgent %s received", req->chaddr, req->hostname, IP2String(ipbuff, req->dhcpp.header.bp_giaddr));
+			if (req->DHCPPacket.header.bp_giaddr)
+				sprintf(logBuff, "DHCPDISCOVER for %s (%s) from RelayAgent %s received", req->chaddr, req->hostname, IP2String(ipbuff, req->DHCPPacket.header.bp_giaddr));
 			else
 				sprintf(logBuff, "DHCPDISCOVER for %s (%s) from interface %s received", req->chaddr, req->hostname, IP2String(ipbuff, network.dhcpConn[req->sockInd].server));
 
@@ -10582,8 +10582,8 @@ _Word gdmess(data9 *req, _Byte sockInd)
 		}
 		else if (req->req_type == DHCP_MESS_REQUEST)
 		{
-			if (req->dhcpp.header.bp_giaddr)
-				sprintf(logBuff, "DHCPREQUEST for %s (%s) from RelayAgent %s received", req->chaddr, req->hostname, IP2String(ipbuff, req->dhcpp.header.bp_giaddr));
+			if (req->DHCPPacket.header.bp_giaddr)
+				sprintf(logBuff, "DHCPREQUEST for %s (%s) from RelayAgent %s received", req->chaddr, req->hostname, IP2String(ipbuff, req->DHCPPacket.header.bp_giaddr));
 			else
 				sprintf(logBuff, "DHCPREQUEST for %s (%s) from interface %s received", req->chaddr, req->hostname, IP2String(ipbuff, network.dhcpConn[req->sockInd].server));
 
@@ -10591,8 +10591,8 @@ _Word gdmess(data9 *req, _Byte sockInd)
 		}
 	}
 
-	req->vp = req->dhcpp.vend_data;
-	memset(req->vp, 0, sizeof(dhcp_packet) - sizeof(dhcp_header));
+	req->vp = req->DHCPPacket.vend_data;
+	memset(req->vp, 0, sizeof(DHCPPacket) - sizeof(DHCPHeader));
 	//printf("end bytes=%u\n", req->bytes);
 
 	return 1;
@@ -10726,8 +10726,8 @@ void __cdecl logDebug(void *lpParam)
 {
 	char localBuff[1024];
 	char localreq->extbuff[256];
-	data9 *req = (data9*)lpParam;
-	genHostName(localBuff, req->dhcpp.header.bp_chaddr, req->dhcpp.header.bp_hlen);
+	DHCPRequest *req = (DHCPRequest*)lpParam;
+	genHostName(localBuff, req->DHCPPacket.header.bp_chaddr, req->DHCPPacket.header.bp_hlen);
 	sprintf(localreq->extbuff, cliFile, localBuff);
 	FILE *f = fopen(localreq->extbuff, "at");
 
@@ -10739,14 +10739,14 @@ void __cdecl logDebug(void *lpParam)
 		char *s = localBuff;
 		s += sprintf(s, localreq->extbuff);
 		s += sprintf(s, " SourceMac=%s", req->chaddr);
-		s += sprintf(s, " ClientIP=%s", IP2String(localreq->extbuff, req->dhcpp.header.bp_ciaddr));
+		s += sprintf(s, " ClientIP=%s", IP2String(localreq->extbuff, req->DHCPPacket.header.bp_ciaddr));
 		s += sprintf(s, " SourceIP=%s", IP2String(localreq->extbuff, req->remote.sin_addr.s_addr));
-		s += sprintf(s, " RelayAgent=%s", IP2String(localreq->extbuff, req->dhcpp.header.bp_giaddr));
+		s += sprintf(s, " RelayAgent=%s", IP2String(localreq->extbuff, req->DHCPPacket.header.bp_giaddr));
 		fprintf(f, "%s\n", localBuff);
 
 		data3 *op;
-		_Byte *raw = req->dhcpp.vend_data;
-		_Byte *rawEnd = raw + (req->bytes - sizeof(dhcp_header));
+		_Byte *raw = req->DHCPPacket.vend_data;
+		_Byte *rawEnd = raw + (req->bytes - sizeof(DHCPHeader));
 		_Byte maxInd = sizeof(opData) / sizeof(data4);
 
 		for (; raw < rawEnd && *raw != DHCP_OPTION_END;)
