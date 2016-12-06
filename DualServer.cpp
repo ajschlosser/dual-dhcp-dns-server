@@ -40,7 +40,7 @@ Network network;
 Config config;
 DHCPRequest token;
 DHCPRequest dhcpRequest;
-data5 dnsr;
+DNSRequest dnsr;
 data71 lump;
 data18 magin;
 _Byte currentInd = 0;
@@ -1262,7 +1262,7 @@ _Byte pIP(void *raw, _DWord data)
 	return sizeof(_DWord);
 }
 
-void addRREmpty(data5 *req)
+void addRREmpty(DNSRequest *req)
 {
 	req->dnsPacket->header.recursionAvailable = 0;
 	req->dnsPacket->header.authenticDataFromNamed = 0;
@@ -1275,14 +1275,14 @@ void addRREmpty(data5 *req)
 	req->dp = &req->dnsPacket->data;
 }
 
-void addRRError(data5 *req, _Byte rcode)
+void addRRError(DNSRequest *req, _Byte rcode)
 {
 	req->dnsPacket->header.responseFlag = 1;
 	req->dp = req->raw + req->bytes;
 	req->dnsPacket->header.responseCode = rcode;
 }
 
-void addRRNone(data5 *req)
+void addRRNone(DNSRequest *req)
 {
 	if (network.DNS[0])
 		req->dnsPacket->header.recursionAvailable = 1;
@@ -1298,7 +1298,7 @@ void addRRNone(data5 *req)
 	req->dnsPacket->header.additionalsCount = 0;
 }
 
-void addRRExt(data5 *req)
+void addRRExt(DNSRequest *req)
 {
 	char tempbuff[512];
 	char temp[2048];
@@ -1376,7 +1376,7 @@ void addRRExt(data5 *req)
 	}
 }
 
-void addRRCache(data5 *req, CachedData *cache)
+void addRRCache(DNSRequest *req, CachedData *cache)
 {
 	char tempbuff[512];
 
@@ -1462,7 +1462,7 @@ void addRRCache(data5 *req, CachedData *cache)
 	}
 }
 
-void addRRA(data5 *req)
+void addRRA(DNSRequest *req)
 {
 	if (req->qType == QTYPE_A_BARE && req->cType != CTYPE_NONE)
 		sprintf(req->cname, "%s.%s", req->query, config.zone);
@@ -1499,7 +1499,7 @@ void addRRA(data5 *req)
 	//req->bytes = req->dp - req->raw;
 }
 
-void addRRPtr(data5 *req)
+void addRRPtr(DNSRequest *req)
 {
 	for (; req->iterBegin != dnsCache[currentInd].end(); req->iterBegin++)
 	{
@@ -1528,7 +1528,7 @@ void addRRPtr(data5 *req)
 	//req->bytes = req->dp - req->raw;
 }
 
-void addRRServerA(data5 *req)
+void addRRServerA(DNSRequest *req)
 {
 	if (req->qType == QTYPE_A_BARE)
 		sprintf(req->cname, "%s.%s", req->query, config.zone);
@@ -1588,7 +1588,7 @@ void addRRServerA(data5 *req)
 	//req->bytes = req->dp - req->raw;
 }
 
-void addRRAny(data5 *req)
+void addRRAny(DNSRequest *req)
 {
 	if (req->qType == QTYPE_A_BARE || req->qType == QTYPE_A_LOCAL || req->qType == QTYPE_A_ZONE)
 		req->iterBegin = dnsCache[currentInd].find(setMapName(req->tempname, req->mapname, DNS_TYPE_A));
@@ -1683,7 +1683,7 @@ void addRRAny(data5 *req)
 	}
 }
 
-void addRRWildA(data5 *req, _DWord ip)
+void addRRWildA(DNSRequest *req, _DWord ip)
 {
 	req->dnsPacket->header.answersCount = htons(htons(req->dnsPacket->header.answersCount) + 1);
 	req->dp += pQu(req->dp, req->query);
@@ -1695,7 +1695,7 @@ void addRRWildA(data5 *req, _DWord ip)
 	//req->bytes = req->dp - req->raw;
 }
 
-void addRRLocalhostA(data5 *req, CachedData *cache)
+void addRRLocalhostA(DNSRequest *req, CachedData *cache)
 {
 	if (strcasecmp(req->query, req->mapname))
 	{
@@ -1718,7 +1718,7 @@ void addRRLocalhostA(data5 *req, CachedData *cache)
 	//req->bytes = req->dp - req->raw;
 }
 
-void addRRLocalhostPtr(data5 *req, CachedData *cache)
+void addRRLocalhostPtr(DNSRequest *req, CachedData *cache)
 {
 	req->dnsPacket->header.answersCount = htons(htons(req->dnsPacket->header.answersCount) + 1);
 	req->dp += pQu(req->dp, req->query);
@@ -1730,7 +1730,7 @@ void addRRLocalhostPtr(data5 *req, CachedData *cache)
 	//req->bytes = req->dp - req->raw;
 }
 
-void addRRMX(data5 *req)
+void addRRMX(DNSRequest *req)
 {
 	if (config.mxCount[currentInd])
 	{
@@ -1741,7 +1741,7 @@ void addRRMX(data5 *req)
 	//req->bytes = req->dp - req->raw;
 }
 
-void addRRSOA(data5 *req)
+void addRRSOA(DNSRequest *req)
 {
 	if (config.authorized && config.expireTime > t)
 	{
@@ -1783,7 +1783,7 @@ void addRRSOA(data5 *req)
 	//req->bytes = req->dp - req->raw;
 }
 
-void addRRNS(data5 *req)
+void addRRNS(DNSRequest *req)
 {
 	//printf("%s=%u\n", config.ns, config.expireTime);
 	if (config.authorized && config.expireTime > t)
@@ -1836,7 +1836,7 @@ void addRRNS(data5 *req)
 	//req->bytes = req->dp - req->raw;
 }
 
-void addRRAd(data5 *req)
+void addRRAd(DNSRequest *req)
 {
 	//printf("%s=%u\n", config.ns, config.expireTime);
 	if (config.authorized && config.expireTime > t)
@@ -1871,7 +1871,7 @@ void addRRAd(data5 *req)
 	//req->bytes = req->dp - req->raw;
 }
 
-void addRRAOne(data5 *req)
+void addRRAOne(DNSRequest *req)
 {
 	if (CachedData *cache = req->iterBegin->second)
 	{
@@ -1894,7 +1894,7 @@ void addRRAOne(data5 *req)
 	}
 }
 
-void addRRPtrOne(data5 *req)
+void addRRPtrOne(DNSRequest *req)
 {
 	if (CachedData *cache = req->iterBegin->second)
 	{
@@ -1919,7 +1919,7 @@ void addRRPtrOne(data5 *req)
 	//req->bytes = req->dp - req->raw;
 }
 
-void addRRSTAOne(data5 *req)
+void addRRSTAOne(DNSRequest *req)
 {
 	if (CachedData *cache = req->iterBegin->second)
 	{
@@ -1942,7 +1942,7 @@ void addRRSTAOne(data5 *req)
 	//req->bytes = req->dp - req->raw;
 }
 
-void addRRCNOne(data5 *req)
+void addRRCNOne(DNSRequest *req)
 {
 	if (CachedData *cache = req->iterBegin->second)
 	{
@@ -1973,7 +1973,7 @@ void addRRCNOne(data5 *req)
 	//req->bytes = req->dp - req->raw;
 }
 
-void addRRMXOne(data5 *req, _Byte m)
+void addRRMXOne(DNSRequest *req, _Byte m)
 {
 	//req->dp += pQu(req->dp, req->query);
 	req->dnsPacket->header.answersCount = htons(htons(req->dnsPacket->header.answersCount) + 1);
@@ -2412,7 +2412,7 @@ void __cdecl sendHTTP(void *lpParam)
 	return;
 }
 
-void procTCP(data5 *req)
+void procTCP(DNSRequest *req)
 {
 	//debug("procTCP");
 
@@ -2772,7 +2772,7 @@ void procTCP(data5 *req)
 	closesocket(req->sock);
 }
 
-_Word sendTCPmess(data5 *req)
+_Word sendTCPmess(DNSRequest *req)
 {
 	char logBuff[256];
 	timeval tv1;
@@ -2803,11 +2803,11 @@ _Word sendTCPmess(data5 *req)
 	return 0;
 }
 
-_Word gdnmess(data5 *req, _Byte sockInd)
+_Word gdnmess(DNSRequest *req, _Byte sockInd)
 {
 	//debug("gdnmess");
 	char logBuff[512];
-	memset(req, 0, sizeof(data5));
+	memset(req, 0, sizeof(DNSRequest));
 	req->sockLen = sizeof(req->remote);
 	errno = 0;
 
@@ -2983,7 +2983,7 @@ _Word gdnmess(data5 *req, _Byte sockInd)
 	return 0;
 }
 
-_Word scanloc(data5 *req)
+_Word scanloc(DNSRequest *req)
 {
 	//debug("scanloc");
 	char logBuff[512];
@@ -3235,7 +3235,7 @@ _Word scanloc(data5 *req)
 	return 0;
 }
 
-_Word fdnmess(data5 *req)
+_Word fdnmess(DNSRequest *req)
 {
 	//debug("fdnmess");
 	//debug(req->cname);
@@ -3456,11 +3456,11 @@ _Word fdnmess(data5 *req)
 	return (nRet);
 }
 
-_Word frdnmess(data5 *req)
+_Word frdnmess(DNSRequest *req)
 {
 	//debug("frdnmess");
 	char tempbuff[512];
-	memset(req, 0, sizeof(data5));
+	memset(req, 0, sizeof(DNSRequest));
 	req->sockLen = sizeof(req->remote);
 	errno = 0;
 	_Byte dnsType = 0;
@@ -3601,7 +3601,7 @@ _Word frdnmess(data5 *req)
 	return 0;
 }
 
-_Word sdnmess(data5 *req)
+_Word sdnmess(DNSRequest *req)
 {
 	//debug("sdnmess");
 
@@ -3834,7 +3834,7 @@ void addHostNotFound(char *hostname)
 	}
 }
 
-char* getResult(data5 *req)
+char* getResult(DNSRequest *req)
 {
 	char buff[256];
 
@@ -6652,7 +6652,7 @@ void mySplit(char *name, char *value, char *source, char splitChar)
 	//printf("%s %s\n", name, value);
 }
 
-char *strquery(data5 *req)
+char *strquery(DNSRequest *req)
 {
 	strcpy(req->extbuff, req->query);
 
@@ -7649,8 +7649,8 @@ _DWord getSerial(char *zone)
 	char logBuff[512];
 	char ipbuff[32];
 	_DWord serial1 = 0;
-	data5 req;
-	memset(&req, 0, sizeof(data5));
+	DNSRequest req;
+	memset(&req, 0, sizeof(DNSRequest));
 	req.remote.sin_family = AF_INET;
 	req.remote.sin_port = htons(IPPORT_DNS);
 	timeval tv1;
@@ -7741,8 +7741,8 @@ _DWord getSerial(char *zone)
 void sendServerName()
 {
 	errno = 0;
-	data5 req;
-	memset(&req, 0, sizeof(data5));
+	DNSRequest req;
+	memset(&req, 0, sizeof(DNSRequest));
 	req.remote.sin_family = AF_INET;
 	req.remote.sin_port = htons(IPPORT_DNS);
 	req.remote.sin_addr.s_addr = config.zoneServers[0];
@@ -8046,7 +8046,7 @@ _DWord getZone(_Byte ind, char *zone)
 	char *data;
 	char *dp;
 	_DWord ip;
-	data5 req;
+	DNSRequest req;
 	CachedData *cache = NULL;
 
 	memset(&lump, 0, sizeof(data71));
@@ -8075,7 +8075,7 @@ _DWord getZone(_Byte ind, char *zone)
 		dnsCache[ind].insert(pair<string, CachedData*>(cache->mapname, cache));
 	}
 
-	memset(&req, 0, sizeof(data5));
+	memset(&req, 0, sizeof(DNSRequest));
 	req.sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 
 	if (req.sock == INVALID_SOCKET)
@@ -8376,10 +8376,10 @@ bool getSecondary()
 	char *data = NULL;
 	char *dp = NULL;
 	_Word rr = 0;
-	data5 req;
+	DNSRequest req;
 	_DWord serial = 0;
 
-	memset(&req, 0, sizeof(data5));
+	memset(&req, 0, sizeof(DNSRequest));
 	req.sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 
 	if (req.sock == INVALID_SOCKET)
@@ -10846,7 +10846,7 @@ void logDNSMess(char *logBuff, _Byte logLevel)
 	}
 }
 
-void logDNSMess(data5 *req, char *logBuff, _Byte logLevel)
+void logDNSMess(DNSRequest *req, char *logBuff, _Byte logLevel)
 {
 	if (verbatim)
 		printf("%s\n", logBuff);
@@ -10859,7 +10859,7 @@ void logDNSMess(data5 *req, char *logBuff, _Byte logLevel)
 	}
 }
 
-void logTCPMess(data5 *req, char *logBuff, _Byte logLevel)
+void logTCPMess(DNSRequest *req, char *logBuff, _Byte logLevel)
 {
 	if (verbatim)
 		printf("%s\n", logBuff);
